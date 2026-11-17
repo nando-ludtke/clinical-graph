@@ -63,7 +63,7 @@ versions:
 
       OUTPUT FORMAT (JSON matching SynthesizedAnswer):
       Return valid JSON with two keys:
-      - "answer": Your grounded clinical answer.
+      - "answer": Your grounded clinical answer. Write clean clinical prose. Do NOT include inline reference tags like [C1], [T1], or [E1] inside "answer"; put all source references only in "citations".
       - "citations": A list of objects {"ref_id": "<tag>", "quote": "<exact verbatim text copied from that source>"}.
         RULES FOR CITATIONS:
         - Cite ONLY retrieved chunk ("C1", "C2", ...) or retrieved table ("T1", "T2", ...) ref IDs.

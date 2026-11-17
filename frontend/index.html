@@ -12,37 +12,58 @@
   <header class="topbar">
     <div class="topbar-brand">
       <span class="brand-mark" aria-hidden="true">CG</span>
-      <h1 class="brand-title">clinical-graph</h1>
-    </div>
-
-    <div class="node-legend" id="node-legend" aria-label="Node type filter legend">
-      <button type="button" class="legend-item" data-node-type="drug" title="Filter drug nodes"><span class="legend-dot" style="--dot-color: #0284c7;"></span>drug</button>
-      <button type="button" class="legend-item" data-node-type="drug_class" title="Filter drug_class nodes"><span class="legend-dot" style="--dot-color: #0369a1;"></span>drug_class</button>
-      <button type="button" class="legend-item" data-node-type="condition" title="Filter condition nodes"><span class="legend-dot" style="--dot-color: #dc2626;"></span>condition</button>
-      <button type="button" class="legend-item" data-node-type="symptom" title="Filter symptom nodes"><span class="legend-dot" style="--dot-color: #ea580c;"></span>symptom</button>
-      <button type="button" class="legend-item" data-node-type="biomarker" title="Filter biomarker nodes"><span class="legend-dot" style="--dot-color: #7c3aed;"></span>biomarker</button>
-      <button type="button" class="legend-item" data-node-type="procedure" title="Filter procedure nodes"><span class="legend-dot" style="--dot-color: #0d9488;"></span>procedure</button>
-      <button type="button" class="legend-item" data-node-type="population" title="Filter population nodes"><span class="legend-dot" style="--dot-color: #4f46e5;"></span>population</button>
+      <div class="brand-lockup">
+        <h1 class="brand-title">Clinical Graph</h1>
+        <span class="brand-subtitle">Hybrid GraphRAG &amp; Evidence Grounding</span>
+      </div>
     </div>
 
     <div class="topbar-actions">
-      <button type="button" id="reset-focus-btn" class="btn btn-secondary btn-sm">
-        Reset Focus
-      </button>
       <button type="button" id="api-key-btn" class="btn btn-outline btn-sm">
         <span class="status-dot" id="api-key-status-dot"></span>
         <span id="api-key-status-label">API Key</span>
       </button>
+      <button type="button" id="api-guide-btn" class="btn btn-outline btn-sm">Check Out API Implementation</button>
     </div>
   </header>
 
-  <!-- Main 3-Column Workspace -->
+  <!-- Main Workspace -->
   <main class="workspace">
+    <!-- Floating Node Type Filter Legend -->
+    <div class="node-legend-wrap">
+      <div class="node-legend" id="node-legend" aria-label="Node type filter legend">
+        <button type="button" class="legend-item" data-node-type="drug" title="Filter drug nodes"><span class="legend-dot" style="--dot-color: #93c5fd; --dot-border: #3b82f6;"></span>drug</button>
+        <button type="button" class="legend-item" data-node-type="drug_class" title="Filter drug_class nodes"><span class="legend-dot" style="--dot-color: #a5b4fc; --dot-border: #6366f1;"></span>drug_class</button>
+        <button type="button" class="legend-item" data-node-type="condition" title="Filter condition nodes"><span class="legend-dot" style="--dot-color: #fca5a5; --dot-border: #ef4444;"></span>condition</button>
+        <button type="button" class="legend-item" data-node-type="symptom" title="Filter symptom nodes"><span class="legend-dot" style="--dot-color: #fdba74; --dot-border: #f97316;"></span>symptom</button>
+        <button type="button" class="legend-item" data-node-type="biomarker" title="Filter biomarker nodes"><span class="legend-dot" style="--dot-color: #d8b4fe; --dot-border: #a855f7;"></span>biomarker</button>
+        <button type="button" class="legend-item" data-node-type="procedure" title="Filter procedure nodes"><span class="legend-dot" style="--dot-color: #99f6e4; --dot-border: #14b8a6;"></span>procedure</button>
+        <button type="button" class="legend-item" data-node-type="population" title="Filter population nodes"><span class="legend-dot" style="--dot-color: #fde68a; --dot-border: #eab308;"></span>population</button>
+      </div>
+    </div>
     <!-- Left Sidebar: Documents -->
-    <aside class="sidebar-left" aria-label="Documents">
+    <aside class="sidebar-left" id="sidebar-left" aria-label="Documents">
       <div class="panel-header">
         <h2>Documents</h2>
-        <span class="count-badge" id="doc-count-badge">0</span>
+        <div class="panel-header-actions">
+          <span class="count-badge" id="doc-count-badge">0</span>
+          <button
+            type="button"
+            id="toggle-docs-btn"
+            class="panel-collapse-btn"
+            aria-expanded="true"
+            aria-label="Collapse document list"
+            title="Collapse document list"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="doc-showcase-note" role="note">
+        The German diabetes guideline and Metformin Label are frozen and cannot be removed for showcase purposes.
       </div>
 
       <div class="doc-list-container" id="doc-list" role="list">
@@ -61,6 +82,15 @@
       <div class="graph-wrapper">
         <div id="cy" class="cy-canvas" aria-label="Interactive Clinical Knowledge Graph"></div>
 
+        <!-- Graph Controls Overlay -->
+        <div class="graph-controls" aria-label="Graph controls">
+          <button type="button" id="zoom-in-btn" class="btn btn-secondary btn-sm graph-zoom-btn" title="Zoom in" aria-label="Zoom in">+</button>
+          <button type="button" id="zoom-out-btn" class="btn btn-secondary btn-sm graph-zoom-btn" title="Zoom out" aria-label="Zoom out">&minus;</button>
+          <button type="button" id="reset-focus-btn" class="btn btn-secondary btn-sm">
+            Reset Focus
+          </button>
+        </div>
+
         <!-- Graph Empty / Loading Overlay -->
         <div class="graph-overlay hidden" id="graph-empty-overlay">
           <p>No graph entities loaded yet.</p>
@@ -68,7 +98,10 @@
 
         <!-- Hover Tooltip -->
         <div class="graph-tooltip hidden" id="graph-tooltip" role="tooltip"></div>
+      </div>
 
+      <!-- Bottom Center Stack: Inspector & Pipeline Visualizer -->
+      <div class="bottom-center-stack">
         <!-- Node / Edge Inspector Bar -->
         <div class="inspector-bar hidden" id="inspector-bar">
           <div class="inspector-header">
@@ -78,13 +111,28 @@
           </div>
           <div class="inspector-body" id="inspector-body"></div>
         </div>
-      </div>
 
-      <!-- Bottom Pipeline Visualizer -->
-      <section class="pipeline-bar hidden" id="pipeline-bar" aria-label="Real-Time Query Pipeline">
+        <!-- Bottom Pipeline Visualizer -->
+        <section class="pipeline-bar hidden" id="pipeline-bar" aria-label="Real-Time Query Pipeline">
         <div class="pipeline-header">
-          <span class="pipeline-title">Query Pipeline</span>
-          <span class="pipeline-status" id="pipeline-status-text">Idle</span>
+          <div class="pipeline-header-left">
+            <span class="pipeline-title">Query Pipeline</span>
+            <div class="evidence-legend" aria-label="Evidence stack color legend">
+              <span class="evidence-legend-item" data-source="rag">
+                <span class="evidence-legend-swatch" aria-hidden="true"></span>Text
+              </span>
+              <span class="evidence-legend-item" data-source="table">
+                <span class="evidence-legend-swatch" aria-hidden="true"></span>Table
+              </span>
+              <span class="evidence-legend-item" data-source="graph">
+                <span class="evidence-legend-swatch" aria-hidden="true"></span>Graph
+              </span>
+            </div>
+          </div>
+          <div class="pipeline-header-right">
+            <span class="pipeline-status" id="pipeline-status-text">Idle</span>
+            <button type="button" id="close-pipeline-btn" class="icon-btn" title="Dismiss pipeline" aria-label="Dismiss pipeline">&times;</button>
+          </div>
         </div>
         <div class="pipeline-stages">
           <!-- Step 1: Search Strings -->
@@ -178,6 +226,7 @@
           </div>
         </div>
       </section>
+      </div>
     </section>
 
     <!-- Right Panel: Chat, Disabled Filters & Citations -->
@@ -346,6 +395,50 @@
       <p id="notice-modal-message" class="notice-message"></p>
       <div class="modal-actions">
         <button type="button" id="ok-notice-modal-btn" class="btn btn-primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Implementation & Integration Guide Modal -->
+  <div class="modal-backdrop hidden" id="api-guide-modal" role="dialog" aria-modal="true" aria-labelledby="api-guide-modal-title">
+    <div class="modal-card api-guide-modal-card">
+      <div class="modal-header">
+        <div>
+          <h3 id="api-guide-modal-title">API Implementation &amp; Integration Guide</h3>
+          <p class="modal-subtitle">Integrate clinical-graph into your clinical LLM pipeline via REST.</p>
+        </div>
+        <button type="button" id="close-api-guide-modal" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+      <div class="api-guide-body">
+        <div class="api-ref-card">
+          <div class="api-ref-info">
+            <div class="api-ref-eyebrow">INTERACTIVE API REFERENCE</div>
+            <p class="api-ref-desc">Explore full OpenAPI schemas, request/response models, and try requests live.</p>
+          </div>
+          <div class="api-ref-actions">
+            <a href="/docs" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">Swagger UI ( /docs ) &#8599;</a>
+            <a href="/redoc" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">ReDoc ( /redoc ) &#8599;</a>
+          </div>
+        </div>
+
+        <div class="api-key-modes-card">
+          <div class="api-key-modes-title">OpenAI Key Modes (for Embeddings, Extraction &amp; Synthesis)</div>
+          <p class="api-key-modes-copy"><code>GET /health</code>, <code>GET /v1/documents</code>, and <code>GET /v1/graph</code> run 100% locally with no external API key. For <code>POST /v1/query</code>, <code>POST /v1/query/stream</code>, and document ingestion, two key modes are supported:</p>
+          <ul class="api-key-modes-list">
+            <li><strong>Server-side env:</strong> Set <code>OPENAI_API_KEY</code> in <code>.env</code> (default when no header is sent).</li>
+            <li><strong>Per-request BYOK header:</strong> Pass <code>X-OpenAI-API-Key: sk-...</code> on individual requests to override or supply a client key without storing it server-side.</li>
+          </ul>
+        </div>
+
+        <div class="snippet-section-header">
+          <h4>Endpoint Snippets</h4>
+          <div class="snippet-lang-toggle" role="tablist" aria-label="Snippet language">
+            <button type="button" id="snippet-lang-curl" class="snippet-lang-btn" data-lang="curl" role="tab" aria-selected="false">cURL</button>
+            <button type="button" id="snippet-lang-python" class="snippet-lang-btn active" data-lang="python" role="tab" aria-selected="true">Python (httpx)</button>
+          </div>
+        </div>
+
+        <div id="api-snippets-container" class="api-snippets-container"></div>
       </div>
     </div>
   </div>

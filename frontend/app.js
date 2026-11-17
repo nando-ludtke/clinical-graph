@@ -5,15 +5,17 @@
   const API_KEY_STORAGE_KEY = "openai_api_key";
 
   const NODE_COLORS = {
-    drug: "#0284c7",
-    drug_class: "#0369a1",
-    condition: "#dc2626",
-    symptom: "#ea580c",
-    biomarker: "#7c3aed",
-    procedure: "#0d9488",
-    population: "#4f46e5",
-    entity: "#64748b",
+    drug: { fill: "#93c5fd", border: "#3b82f6" },
+    drug_class: { fill: "#a5b4fc", border: "#6366f1" },
+    condition: { fill: "#fca5a5", border: "#ef4444" },
+    symptom: { fill: "#fdba74", border: "#f97316" },
+    biomarker: { fill: "#d8b4fe", border: "#a855f7" },
+    procedure: { fill: "#99f6e4", border: "#14b8a6" },
+    population: { fill: "#fde68a", border: "#eab308" },
+    entity: { fill: "#cbd5e1", border: "#94a3b8" },
   };
+
+  const CURSOR_REVEAL_RADIUS_PX = 180;
 
   const state = {
     hasServerApiKey: false,
@@ -31,20 +33,31 @@
     isQuerying: false,
     activeHighlightMode: null, // { type: "doc"|"element"|"retrieval"|"nodeType", ... }
     activeNodeTypeFilter: null,
+    cursorModelPos: null,
+    cursorRenderedPos: null,
+    lastLabelZoom: null,
+    baseFitZoom: 1,
+    cyContainerMouseLeaveBound: false,
     rewriteCollapseTimer: null,
     documentCache: new Map(), // doc_id -> DocumentRecord
     docViewerRequestSeq: 0,
     citationModalRequestSeq: 0,
+    apiGuideLang: "python",
   };
 
   // --- DOM References ---
   const el = {
     nodeLegend: document.getElementById("node-legend"),
+    zoomInBtn: document.getElementById("zoom-in-btn"),
+    zoomOutBtn: document.getElementById("zoom-out-btn"),
     resetFocusBtn: document.getElementById("reset-focus-btn"),
     apiKeyBtn: document.getElementById("api-key-btn"),
     apiKeyStatusDot: document.getElementById("api-key-status-dot"),
     apiKeyStatusLabel: document.getElementById("api-key-status-label"),
+    apiGuideBtn: document.getElementById("api-guide-btn"),
 
+    sidebarLeft: document.getElementById("sidebar-left"),
+    toggleDocsBtn: document.getElementById("toggle-docs-btn"),
     docCountBadge: document.getElementById("doc-count-badge"),
     docList: document.getElementById("doc-list"),
     openUploadBtn: document.getElementById("open-upload-btn"),
@@ -59,6 +72,7 @@
     closeInspectorBtn: document.getElementById("close-inspector-btn"),
 
     pipelineBar: document.getElementById("pipeline-bar"),
+    closePipelineBtn: document.getElementById("close-pipeline-btn"),
     pipelineStatusText: document.getElementById("pipeline-status-text"),
     stageRewrite: document.getElementById("stage-rewrite"),
     rewriteWrapper: document.getElementById("rewrite-wrapper"),
@@ -113,6 +127,12 @@
     noticeModalMessage: document.getElementById("notice-modal-message"),
     closeNoticeModalBtn: document.getElementById("close-notice-modal-btn"),
     okNoticeModalBtn: document.getElementById("ok-notice-modal-btn"),
+
+    apiGuideModal: document.getElementById("api-guide-modal"),
+    closeApiGuideModalBtn: document.getElementById("close-api-guide-modal"),
+    snippetLangCurl: document.getElementById("snippet-lang-curl"),
+    snippetLangPython: document.getElementById("snippet-lang-python"),
+    apiSnippetsContainer: document.getElementById("api-snippets-container"),
   };
 
   // --- Utilities ---
@@ -436,7 +456,7 @@
     state.relatedDocIds.clear();
     renderDocumentList();
     closeInspector();
-    highlightGraphByDocIds([docId]);
+    highlightGraphByDocIds([docId], { fit: true });
   }
 
   function clearSelectedDocument() {
@@ -603,7 +623,7 @@
           node_id: nodeId,
           canonical_name: n.canonical_name || n.label || nodeId,
           node_type: nodeType,
-          color: NODE_COLORS[nodeType] || NODE_COLORS.entity,
+          color: (NODE_COLORS[nodeType] || NODE_COLORS.entity).fill,
           aliases: Array.isArray(n.aliases) ? n.aliases : [],
           description: n.description || "",
           doc_ids: Array.isArray(n.doc_ids) ? n.doc_ids : [],
@@ -667,40 +687,44 @@
     state.cy = window.cytoscape({
       container: el.cyContainer,
       elements: [...nodes, ...edges],
-      minZoom: 0.2,
-      maxZoom: 3.5,
+      minZoom: 0.1,
+      maxZoom: 8,
       wheelSensitivity: 0.25,
       style: [
         {
           selector: "node",
           style: {
-            "background-color": "#e2e8f0",
+            "background-color": "#94a3b8",
             label: "data(canonical_name)",
             "font-size": 10,
             "font-weight": 600,
             color: "#334155",
+            "text-opacity": 0,
             "text-valign": "bottom",
             "text-margin-y": 5,
             "text-wrap": "ellipsis",
             "text-max-width": 110,
-            width: 26,
-            height: 26,
+            width: 10,
+            height: 10,
             "border-width": 1,
-            "border-color": "#94a3b8",
-            "transition-property": "opacity, border-color, border-width",
+            "border-color": "#64748b",
+            "transition-property":
+              "opacity, border-color, border-width, background-color, text-opacity",
             "transition-duration": "0.15s",
           },
         },
         {
           selector: "edge",
           style: {
-            width: 1,
-            "line-color": "#cbd5e1",
+            width: 0.8,
+            "line-color": "#e2e8f0",
             "target-arrow-color": "#cbd5e1",
             "target-arrow-shape": "triangle",
             "curve-style": "bezier",
-            "arrow-scale": 0.8,
-            "transition-property": "opacity, line-color, target-arrow-color, width",
+            "arrow-scale": 0.6,
+            "text-opacity": 0,
+            "transition-property":
+              "opacity, line-color, target-arrow-color, width, text-opacity",
             "transition-duration": "0.15s",
           },
         },
@@ -714,18 +738,63 @@
           selector: "node.highlighted",
           style: {
             opacity: 1,
-            "background-color": "#e2e8f0",
-            "border-width": 2.5,
-            "border-color": "#0284c7",
+            "background-color": "#cbd5e1",
+            "border-width": 2,
+            "border-color": "#64748b",
           },
         },
+        ...Object.entries(NODE_COLORS)
+          .filter(([type]) => type !== "entity")
+          .map(([type, palette]) => ({
+            selector: `node[node_type = "${type}"].highlighted`,
+            style: {
+              opacity: 1,
+              "background-color": palette.fill,
+              "border-color": palette.border,
+              "border-width": 2,
+            },
+          })),
         {
           selector: "edge.highlighted",
           style: {
             opacity: 1,
-            width: 2,
-            "line-color": "#0284c7",
-            "target-arrow-color": "#0284c7",
+            width: 1.4,
+            "line-color": "#64748b",
+            "target-arrow-color": "#94a3b8",
+          },
+        },
+        {
+          selector: "node.show-label",
+          style: {
+            "text-opacity": 1,
+          },
+        },
+        {
+          selector: "edge.show-label",
+          style: {
+            label: "data(relation)",
+            "text-opacity": 1,
+            "font-size": 10,
+            color: "#334155",
+            "text-background-color": "#ffffff",
+            "text-background-opacity": 0.85,
+            "text-background-padding": 2,
+          },
+        },
+        {
+          selector: "node.cursor-nearby",
+          style: {
+            "background-color": "#bbf7d0",
+            "border-color": "#4ade80",
+            "text-opacity": 1,
+            "font-size": "9px",
+          },
+        },
+        {
+          selector: "edge.cursor-nearby",
+          style: {
+            "line-color": "#86efac",
+            "target-arrow-color": "#4ade80",
           },
         },
         {
@@ -751,32 +820,192 @@
         ? {
             name: "cose",
             animate: false,
-            padding: 36,
-            nodeRepulsion: 6500,
-            idealEdgeLength: 95,
+            padding: 48,
+            nodeRepulsion: 55000,
+            idealEdgeLength: 155,
+            nodeOverlap: 32,
+            gravity: 0.2,
+            numIter: 1500,
           }
         : { name: "grid" },
     });
 
     bindCytoscapeEvents(state.cy);
+    if (hasElements) {
+      fitGraphToVisibleArea(state.cy);
+      state.baseFitZoom = state.cy.zoom();
+    } else {
+      state.baseFitZoom = 1;
+    }
+  }
+
+  function fitGraphToVisibleArea(cy, eles = null, { animate = false, complete = null } = {}) {
+    if (!cy) return;
+    const target = eles && eles.length ? eles : cy.elements();
+    if (!target || target.length === 0) return;
+
+    const bb = target.boundingBox();
+    if (!bb || bb.w <= 0 || bb.h <= 0) {
+      if (animate) {
+        cy.animate({
+          fit: { eles: target, padding: 36 },
+          duration: 280,
+          ...(complete ? { complete } : {}),
+        });
+      } else {
+        cy.fit(target, 36);
+      }
+      return;
+    }
+
+    const isWide = window.innerWidth > 1024;
+    const padLeft = isWide ? 330 : 36;
+    const padRight = isWide ? 420 : 36;
+    const padTop = isWide ? 105 : 76;
+    const padBottom =
+      isWide && el.pipelineBar && !el.pipelineBar.classList.contains("hidden") ? 155 : 36;
+
+    const availW = Math.max(80, cy.width() - padLeft - padRight);
+    const availH = Math.max(80, cy.height() - padTop - padBottom);
+    const rawZoom = Math.min(availW / bb.w, availH / bb.h) * 0.9;
+    const zoom = Math.max(cy.minZoom(), Math.min(cy.maxZoom(), rawZoom));
+
+    const bbCenterX = bb.x1 + bb.w / 2;
+    const bbCenterY = bb.y1 + bb.h / 2;
+    const targetCenterX = padLeft + availW / 2;
+    const targetCenterY = padTop + availH / 2;
+
+    const pan = {
+      x: targetCenterX - bbCenterX * zoom,
+      y: targetCenterY - bbCenterY * zoom,
+    };
+
+    if (animate) {
+      cy.animate({ zoom, pan, duration: 280, ...(complete ? { complete } : {}) });
+    } else {
+      cy.viewport({ zoom, pan });
+    }
+  }
+
+  function getCursorRevealMinZoom(cy) {
+    return (state.baseFitZoom || 1) * Math.pow(1.25, 6) * 0.99;
+  }
+
+  function updateDynamicLabelScale(cy) {
+    if (!cy) return;
+    const zoom = Math.max(cy.zoom(), 0.05);
+    if (state.lastLabelZoom === zoom) return;
+    state.lastLabelZoom = zoom;
+    cy.style()
+      .selector("node.cursor-nearby, node.show-label")
+      .style({
+        "font-size": 12 / zoom,
+        "text-margin-y": 6 / zoom,
+        "text-max-width": 130 / zoom,
+      })
+      .selector("edge.show-label")
+      .style({
+        "font-size": 10 / zoom,
+        "text-background-padding": 2 / zoom,
+      })
+      .update();
+  }
+
+  function updateCursorNearby(cy) {
+    if (!cy) return;
+    const zoom = cy.zoom();
+    if (zoom < getCursorRevealMinZoom(cy) || !state.cursorModelPos) {
+      cy.elements(".cursor-nearby").removeClass("cursor-nearby");
+      return;
+    }
+
+    updateDynamicLabelScale(cy);
+
+    const { x: cx, y: cyPos } = state.cursorModelPos;
+    const radius = CURSOR_REVEAL_RADIUS_PX / zoom;
+    const radiusSq = radius * radius;
+
+    const nearbyNodes = cy.nodes().filter((node) => {
+      const pos = node.position();
+      const dx = pos.x - cx;
+      const dy = pos.y - cyPos;
+      return dx * dx + dy * dy <= radiusSq;
+    });
+
+    const nearbyEdges = nearbyNodes.connectedEdges();
+    const nextNearby = nearbyNodes.union(nearbyEdges);
+
+    cy.batch(() => {
+      cy.elements(".cursor-nearby").difference(nextNearby).removeClass("cursor-nearby");
+      nextNearby.difference(cy.elements(".cursor-nearby")).addClass("cursor-nearby");
+    });
+  }
+
+  function clearCursorReveal(cy) {
+    state.cursorModelPos = null;
+    state.cursorRenderedPos = null;
+    if (cy) {
+      cy.elements(".cursor-nearby").removeClass("cursor-nearby");
+    }
   }
 
   function bindCytoscapeEvents(cy) {
-    cy.on("mouseover", "node, edge", (evt) => {
+    state.lastLabelZoom = null;
+    clearCursorReveal(cy);
+
+    cy.on("mousemove", (evt) => {
+      if (evt.renderedPosition) {
+        state.cursorRenderedPos = {
+          x: evt.renderedPosition.x,
+          y: evt.renderedPosition.y,
+        };
+      }
+      if (evt.position && Number.isFinite(evt.position.x) && Number.isFinite(evt.position.y)) {
+        state.cursorModelPos = { x: evt.position.x, y: evt.position.y };
+        updateCursorNearby(cy);
+      }
+    });
+
+    cy.on("zoom", () => {
+      if (state.cursorRenderedPos) {
+        const pan = cy.pan();
+        const zoom = cy.zoom();
+        state.cursorModelPos = {
+          x: (state.cursorRenderedPos.x - pan.x) / zoom,
+          y: (state.cursorRenderedPos.y - pan.y) / zoom,
+        };
+      }
+      if (cy.zoom() >= getCursorRevealMinZoom(cy) || cy.elements(".show-label").length > 0) {
+        updateDynamicLabelScale(cy);
+      }
+      updateCursorNearby(cy);
+    });
+
+    cy.on("mouseout", (evt) => {
+      if (evt.target === cy) {
+        clearCursorReveal(cy);
+      }
+    });
+
+    if (!state.cyContainerMouseLeaveBound && el.cyContainer) {
+      state.cyContainerMouseLeaveBound = true;
+      el.cyContainer.addEventListener("mouseleave", () => {
+        clearCursorReveal(state.cy);
+      });
+    }
+
+    cy.on("mouseover", "node", (evt) => {
       const target = evt.target;
-      const text = target.isNode()
-        ? `${target.data("canonical_name")} (${target.data("node_type")})`
-        : target.data("relation");
-      el.graphTooltip.textContent = text;
+      el.graphTooltip.textContent = `${target.data("canonical_name")} (${target.data("node_type")})`;
       el.graphTooltip.classList.remove("hidden");
       positionTooltip(evt.originalEvent);
     });
 
-    cy.on("mousemove", "node, edge", (evt) => {
+    cy.on("mousemove", "node", (evt) => {
       positionTooltip(evt.originalEvent);
     });
 
-    cy.on("mouseout", "node, edge", () => {
+    cy.on("mouseout", "node", () => {
       el.graphTooltip.classList.add("hidden");
     });
 
@@ -792,7 +1021,7 @@
 
     cy.on("tap", (evt) => {
       if (evt.target === cy) {
-        resetGraphFocus();
+        resetGraphFocus({ fit: false });
       }
     });
   }
@@ -808,7 +1037,7 @@
 
   function clearGraphClasses() {
     if (!state.cy) return;
-    state.cy.elements().removeClass("dimmed highlighted danger-highlight");
+    state.cy.elements().removeClass("dimmed highlighted danger-highlight show-label");
   }
 
   function clearNodeTypeFilter() {
@@ -820,15 +1049,16 @@
     }
   }
 
-  function resetGraphFocus() {
+  function resetGraphFocus({ fit = true } = {}) {
     clearGraphClasses();
     clearNodeTypeFilter();
     state.activeHighlightMode = null;
     state.relatedDocIds.clear();
     updateDocumentListHighlights();
     closeInspector();
-    if (state.cy && state.cy.elements().length > 0) {
-      state.cy.fit(undefined, 36);
+    if (fit && state.cy && state.cy.elements().length > 0) {
+      fitGraphToVisibleArea(state.cy);
+      state.baseFitZoom = state.cy.zoom();
     }
   }
 
@@ -887,7 +1117,7 @@
     state.activeHighlightMode = { type: "element", elementId: element.id() };
   }
 
-  function highlightGraphByDocIds(docIds, { returnMatchedCount = false } = {}) {
+  function highlightGraphByDocIds(docIds, { returnMatchedCount = false, fit = false } = {}) {
     if (!state.cy) return 0;
     clearGraphClasses();
 
@@ -901,15 +1131,22 @@
       state.cy.elements().difference(matching).addClass("dimmed");
       matching.addClass("highlighted");
       state.activeHighlightMode = { type: "doc", docIds };
+      if (fit) {
+        fitGraphToVisibleArea(state.cy, matching, { animate: true });
+      }
     }
 
     return returnMatchedCount ? matching.length : matching.length;
   }
 
-  function highlightGraphByNodeIds(nodeIds, { transient = false } = {}) {
+  function highlightGraphByNodeIds(
+    nodeIds,
+    { transient = false, fit = false, showLabels = false } = {}
+  ) {
     if (!state.cy) return;
     clearGraphClasses();
 
+    const shouldShowLabels = Boolean(showLabels || fit);
     const idSet = new Set(nodeIds || []);
     const matchingNodes = state.cy.nodes().filter((node) => {
       return idSet.has(node.id()) || idSet.has(node.data("node_id"));
@@ -920,8 +1157,18 @@
       const highlightSet = matchingNodes.union(connectedEdges);
       state.cy.elements().difference(highlightSet).addClass("dimmed");
       highlightSet.addClass("highlighted");
+      if (shouldShowLabels) {
+        highlightSet.addClass("show-label");
+        updateDynamicLabelScale(state.cy);
+      }
       if (!transient) {
-        state.activeHighlightMode = { type: "nodes", nodeIds };
+        state.activeHighlightMode = { type: "nodes", nodeIds, showLabels: shouldShowLabels };
+      }
+      if (fit && highlightSet.length > 0) {
+        fitGraphToVisibleArea(state.cy, highlightSet, {
+          animate: true,
+          complete: () => updateDynamicLabelScale(state.cy),
+        });
       }
     }
   }
@@ -947,6 +1194,10 @@
         state.activeHighlightMode.seedNodeIds,
         state.activeHighlightMode.highlightedEdgeIds
       );
+    } else if (state.activeHighlightMode?.type === "nodes") {
+      highlightGraphByNodeIds(state.activeHighlightMode.nodeIds, {
+        showLabels: Boolean(state.activeHighlightMode.showLabels),
+      });
     } else if (state.activeHighlightMode?.type === "nodeType") {
       highlightGraphByNodeType(state.activeHighlightMode.nodeType);
     } else {
@@ -1115,6 +1366,14 @@
         }
       });
 
+      if (source === "graph" && nodeIds.length > 0) {
+        iconBtn.addEventListener("click", () => {
+          clearSelectedDocument();
+          clearNodeTypeFilter();
+          highlightGraphByNodeIds(nodeIds, { transient: false, fit: true, showLabels: true });
+        });
+      }
+
       el.evidenceStack.appendChild(iconBtn);
     });
   }
@@ -1207,8 +1466,8 @@
     if (welcome) welcome.remove();
 
     const msgEl = document.createElement("div");
-    msgEl.className = "chat-msg chat-msg-user";
-    msgEl.textContent = text;
+    msgEl.className = "chat-msg chat-msg-user markdown-body";
+    msgEl.innerHTML = renderSafeMarkdown(text);
     el.chatMessages.appendChild(msgEl);
     el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
   }
@@ -1218,8 +1477,8 @@
     msgEl.className = "chat-msg chat-msg-assistant";
 
     const answerEl = document.createElement("div");
-    answerEl.className = "assistant-answer";
-    answerEl.textContent = payload.answer || "No answer returned.";
+    answerEl.className = "assistant-answer markdown-body";
+    answerEl.innerHTML = renderSafeMarkdown(payload.answer || "No answer returned.");
     msgEl.appendChild(answerEl);
 
     const citations = Array.isArray(payload.citations) ? payload.citations : [];
@@ -1768,6 +2027,225 @@
     }
   }
 
+  function zoomGraphBy(factor) {
+    const cy = state.cy;
+    if (!cy) return;
+    const nextZoom = Math.min(cy.maxZoom(), Math.max(cy.minZoom(), cy.zoom() * factor));
+    cy.zoom({
+      level: nextZoom,
+      renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 },
+    });
+  }
+
+  // --- API Implementation & Integration Guide Modal ---
+  function getApiSnippets(lang) {
+    const baseUrl = window.location.origin && window.location.origin !== "null"
+      ? window.location.origin
+      : "http://localhost:8000";
+
+    const specs = [
+      {
+        method: "POST",
+        path: "/v1/query",
+        note: "Header: X-OpenAI-API-Key: sk-... (optional if server env set)",
+        python: `import httpx
+
+resp = httpx.post(
+    "${baseUrl}/v1/query",
+    headers={"X-OpenAI-API-Key": "sk-..."},  # optional if server env set
+    json={
+        "query": "What are the contraindications for metformin?",
+        "retrieval_mode": "hybrid",
+        "top_k": 5,
+    },
+    timeout=60.0,
+)
+resp.raise_for_status()
+data = resp.json()
+print(data["answer"])`,
+        curl: `curl -X POST "${baseUrl}/v1/query" \\
+  -H "Content-Type: application/json" \\
+  -H "X-OpenAI-API-Key: sk-..." \\
+  -d '{
+    "query": "What are the contraindications for metformin?",
+    "retrieval_mode": "hybrid",
+    "top_k": 5
+  }'`,
+      },
+      {
+        method: "POST",
+        path: "/v1/query/stream",
+        note: "SSE streaming pipeline events + grounded answer",
+        python: `import httpx
+
+with httpx.stream(
+    "POST",
+    "${baseUrl}/v1/query/stream",
+    headers={"X-OpenAI-API-Key": "sk-..."},  # optional if server env set
+    json={"query": "Summarize SGLT2 inhibitor recommendations", "retrieval_mode": "hybrid"},
+    timeout=60.0,
+) as resp:
+    resp.raise_for_status()
+    for line in resp.iter_lines():
+        if line.startswith("data: "):
+            print(line[6:])`,
+        curl: `curl -N -X POST "${baseUrl}/v1/query/stream" \\
+  -H "Content-Type: application/json" \\
+  -H "X-OpenAI-API-Key: sk-..." \\
+  -d '{
+    "query": "Summarize SGLT2 inhibitor recommendations",
+    "retrieval_mode": "hybrid"
+  }'`,
+      },
+      {
+        method: "POST",
+        path: "/v1/documents/upload",
+        note: "Multipart PDF / MD / TXT ingestion",
+        python: `import httpx
+
+with open("guideline.pdf", "rb") as f:
+    resp = httpx.post(
+        "${baseUrl}/v1/documents/upload",
+        headers={"X-OpenAI-API-Key": "sk-..."},  # optional if server env set
+        files={"file": ("guideline.pdf", f, "application/pdf")},
+        data={"title": "Diabetes Guideline", "local_restriction": "DE"},
+        timeout=60.0,
+    )
+resp.raise_for_status()
+print(resp.json())  # {"job_id": "...", "status": "queued"}`,
+        curl: `curl -X POST "${baseUrl}/v1/documents/upload" \\
+  -H "X-OpenAI-API-Key: sk-..." \\
+  -F "file=@guideline.pdf" \\
+  -F "title=Diabetes Guideline" \\
+  -F "local_restriction=DE"`,
+      },
+      {
+        method: "GET",
+        path: "/v1/graph",
+        note: "No API key required — full knowledge graph JSON",
+        python: `import httpx
+
+resp = httpx.get("${baseUrl}/v1/graph", timeout=30.0)
+resp.raise_for_status()
+graph = resp.json()
+print(len(graph["nodes"]), len(graph["edges"]))`,
+        curl: `curl -s "${baseUrl}/v1/graph" | jq '{nodes: (.nodes | length), edges: (.edges | length)}'`,
+      },
+    ];
+
+    return specs.map((spec) => ({
+      method: spec.method,
+      path: spec.path,
+      note: spec.note,
+      code: lang === "curl" ? spec.curl : spec.python,
+    }));
+  }
+
+  function renderApiSnippets(lang) {
+    const activeLang = lang === "curl" ? "curl" : "python";
+    state.apiGuideLang = activeLang;
+
+    if (el.snippetLangCurl && el.snippetLangPython) {
+      const isCurl = activeLang === "curl";
+      el.snippetLangCurl.classList.toggle("active", isCurl);
+      el.snippetLangCurl.setAttribute("aria-selected", String(isCurl));
+      el.snippetLangPython.classList.toggle("active", !isCurl);
+      el.snippetLangPython.setAttribute("aria-selected", String(!isCurl));
+    }
+
+    if (!el.apiSnippetsContainer) return;
+    el.apiSnippetsContainer.innerHTML = "";
+
+    const snippets = getApiSnippets(activeLang);
+    snippets.forEach((snippet) => {
+      const card = document.createElement("div");
+      card.className = "snippet-card";
+
+      const header = document.createElement("div");
+      header.className = "snippet-card-header";
+
+      const left = document.createElement("div");
+      left.className = "snippet-endpoint-left";
+
+      const badge = document.createElement("span");
+      badge.className = `method-badge ${snippet.method.toLowerCase()}`;
+      badge.textContent = snippet.method;
+
+      const pathEl = document.createElement("span");
+      pathEl.className = "snippet-path";
+      pathEl.textContent = snippet.path;
+
+      left.appendChild(badge);
+      left.appendChild(pathEl);
+
+      const noteEl = document.createElement("span");
+      noteEl.className = "snippet-note";
+      noteEl.textContent = snippet.note;
+
+      header.appendChild(left);
+      header.appendChild(noteEl);
+
+      const codeWrap = document.createElement("div");
+      codeWrap.className = "snippet-code-wrap";
+
+      const pre = document.createElement("pre");
+      pre.className = "snippet-pre";
+      const codeEl = document.createElement("code");
+      codeEl.textContent = snippet.code;
+      pre.appendChild(codeEl);
+
+      const copyBtn = document.createElement("button");
+      copyBtn.type = "button";
+      copyBtn.className = "snippet-copy-btn";
+      copyBtn.textContent = "Copy";
+      let resetTimer = null;
+
+      copyBtn.addEventListener("click", async () => {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(snippet.code);
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = snippet.code;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+          }
+          copyBtn.textContent = "Copied!";
+          copyBtn.classList.add("copied");
+          if (resetTimer) clearTimeout(resetTimer);
+          resetTimer = setTimeout(() => {
+            copyBtn.textContent = "Copy";
+            copyBtn.classList.remove("copied");
+          }, 1600);
+        } catch (err) {
+          console.error("Failed to copy snippet:", err);
+        }
+      });
+
+      codeWrap.appendChild(pre);
+      codeWrap.appendChild(copyBtn);
+
+      card.appendChild(header);
+      card.appendChild(codeWrap);
+      el.apiSnippetsContainer.appendChild(card);
+    });
+  }
+
+  function openApiGuideModal() {
+    if (!el.apiGuideModal) return;
+    renderApiSnippets(state.apiGuideLang || "python");
+    el.apiGuideModal.classList.remove("hidden");
+  }
+
+  function closeApiGuideModal() {
+    if (!el.apiGuideModal) return;
+    el.apiGuideModal.classList.add("hidden");
+  }
+
   // --- Event Listeners ---
   function initEventListeners() {
     if (el.nodeLegend) {
@@ -1778,12 +2256,37 @@
       });
     }
 
+    if (el.zoomInBtn) {
+      el.zoomInBtn.addEventListener("click", () => zoomGraphBy(1.25));
+    }
+
+    if (el.zoomOutBtn) {
+      el.zoomOutBtn.addEventListener("click", () => zoomGraphBy(1 / 1.25));
+    }
+
     el.resetFocusBtn.addEventListener("click", () => {
       clearSelectedDocument();
-      resetGraphFocus();
+      resetGraphFocus({ fit: true });
     });
 
     el.apiKeyBtn.addEventListener("click", () => openApiKeyModal(false));
+    if (el.apiGuideBtn) {
+      el.apiGuideBtn.addEventListener("click", openApiGuideModal);
+    }
+    if (el.closeApiGuideModalBtn) {
+      el.closeApiGuideModalBtn.addEventListener("click", closeApiGuideModal);
+    }
+    if (el.apiGuideModal) {
+      el.apiGuideModal.addEventListener("click", (e) => {
+        if (e.target === el.apiGuideModal) closeApiGuideModal();
+      });
+    }
+    if (el.snippetLangCurl) {
+      el.snippetLangCurl.addEventListener("click", () => renderApiSnippets("curl"));
+    }
+    if (el.snippetLangPython) {
+      el.snippetLangPython.addEventListener("click", () => renderApiSnippets("python"));
+    }
     el.closeApiKeyModalBtn.addEventListener("click", closeApiKeyModal);
     el.clearApiKeyBtn.addEventListener("click", () => {
       sessionStorage.removeItem(API_KEY_STORAGE_KEY);
@@ -1805,12 +2308,27 @@
       updateApiKeyStatusUI();
     });
 
+    if (el.toggleDocsBtn && el.sidebarLeft) {
+      el.toggleDocsBtn.addEventListener("click", () => {
+        const isCollapsed = el.sidebarLeft.classList.toggle("collapsed");
+        el.toggleDocsBtn.setAttribute("aria-expanded", String(!isCollapsed));
+        const label = isCollapsed ? "Expand document list" : "Collapse document list";
+        el.toggleDocsBtn.setAttribute("title", label);
+        el.toggleDocsBtn.setAttribute("aria-label", label);
+      });
+    }
+
     el.openUploadBtn.addEventListener("click", openUploadModal);
     el.closeUploadModalBtn.addEventListener("click", closeUploadModal);
     el.cancelUploadBtn.addEventListener("click", closeUploadModal);
     el.uploadForm.addEventListener("submit", handleUploadSubmit);
 
     el.closeInspectorBtn.addEventListener("click", resetGraphFocus);
+    if (el.closePipelineBtn && el.pipelineBar) {
+      el.closePipelineBtn.addEventListener("click", () => {
+        el.pipelineBar.classList.add("hidden");
+      });
+    }
     el.closeCitationModalBtn.addEventListener("click", closeCitationModal);
     el.citationModal.addEventListener("click", (e) => {
       if (e.target === el.citationModal) closeCitationModal();
@@ -1818,7 +2336,9 @@
     el.closeDocViewerBtn.addEventListener("click", closeDocumentViewer);
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
-      if (!el.docViewerModal.classList.contains("hidden")) {
+      if (el.apiGuideModal && !el.apiGuideModal.classList.contains("hidden")) {
+        closeApiGuideModal();
+      } else if (!el.docViewerModal.classList.contains("hidden")) {
         closeDocumentViewer();
       } else if (!el.citationModal.classList.contains("hidden")) {
         closeCitationModal();

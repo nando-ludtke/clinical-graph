@@ -1607,6 +1607,89 @@ async def test_document_order_sorting_for_passages_and_evidence_items(tmp_path: 
     assert ev_ids == [c0_id, c1_id, c2_id]
 
 
+def test_strip_inline_ref_tags_preserves_markdown_and_normal_brackets() -> None:
+    from clinical_graph.agents.answer_agent import _strip_inline_ref_tags
+
+    raw = (
+        "**Dosing** [C1]: Start empagliflozin [10 mg] daily [E2], "
+        "and avoid if eGFR < 20 [T1] or unstable [C1, E2].\n"
+        "- Monitor renal function [C1][T2]\n"
+        "  - Nested bullet [E1; T3] with [10 mg] preserved\n"
+        "| Drug | Dose |\n"
+        "| --- | --- |\n"
+        "| Empagliflozin | 10 mg [C2] |"
+    )
+    expected = (
+        "**Dosing**: Start empagliflozin [10 mg] daily, "
+        "and avoid if eGFR < 20 or unstable.\n"
+        "- Monitor renal function\n"
+        "  - Nested bullet with [10 mg] preserved\n"
+        "| Drug | Dose |\n"
+        "| --- | --- |\n"
+        "| Empagliflozin | 10 mg |"
+    )
+    assert _strip_inline_ref_tags(raw) == expected
+
+
+@pytest.mark.anyio
+async def test_synthesize_with_usage_async_strips_inline_ref_tags() -> None:
+    from clinical_graph.agents.answer_agent import CitationQuote, SynthesizedAnswer
+    from clinical_graph.schemas.query import Citation
+
+    doc_id = "doc-strip-tags"
+    chunk_text = "Start empagliflozin 10 mg daily; do not initiate if eGFR < 20 mL/min/1.73m2."
+    retrieved_chunks = [
+        {
+            "doc_id": doc_id,
+            "slug": "sglt2-sop",
+            "title": "SGLT2 SOP",
+            "chunk_id": f"{doc_id}:chunk:0",
+            "text": chunk_text,
+        }
+    ]
+    default_citation = Citation(
+        doc_id=doc_id,
+        slug="sglt2-sop",
+        title="SGLT2 SOP",
+        doc_type=DocType.INTERNAL_SOP,
+        local_restriction=LocalRestriction.NONE,
+        excerpt=chunk_text,
+        excerpts=[chunk_text],
+        chunk_ids=[f"{doc_id}:chunk:0"],
+    )
+    payload = SynthesizedAnswer(
+        answer=(
+            "Start **empagliflozin** [10 mg] daily [C1], "
+            "and avoid if eGFR < 20 mL/min/1.73m2 [C1, E2][T1]."
+        ),
+        citations=[CitationQuote(ref_id="C1", quote=chunk_text)],
+    )
+    agent = AnswerAgent(
+        llm_client=_QueuedLLMClient([payload.model_dump_json()]),
+        model="gpt-4o",
+    )
+
+    response, _ = await agent.synthesize_with_usage_async(
+        request=QueryRequest(
+            session_id="strip-tags-test",
+            query="How should empagliflozin be dosed?",
+        ),
+        seed_nodes=[("empagliflozin", 0.9)],
+        traversed_edges=[{"source": "empagliflozin", "target": "egfr", "relation": "contraindicated"}],
+        documents=[],
+        citations=[default_citation],
+        retrieved_chunks=retrieved_chunks,
+    )
+
+    assert (
+        response.answer
+        == "Start **empagliflozin** [10 mg] daily, and avoid if eGFR < 20 mL/min/1.73m2."
+    )
+    assert len(response.citations) == 1
+    assert response.citations[0].excerpt == chunk_text
+
+
+
 
 
 

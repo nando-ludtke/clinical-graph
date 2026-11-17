@@ -23,6 +23,26 @@ from clinical_graph.schemas.query import (
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 _SENTENCE_SPLIT_RE = re.compile(r"(?:[^\n.!?]|(?<=\d)\.(?=\d))+(?:[.!?]+|$)")
 _CHUNK_ID_ORDER_RE = re.compile(r":(chunk|table):(\d+)$")
+_INLINE_REF_TAG_RE = re.compile(r"\[(?:[CTE]\d+)(?:\s*[,;]\s*[CTE]\d+)*\]")
+_SPACE_BEFORE_PUNCT_RE = re.compile(r"[ \t]+([,.;:!?])")
+_INLINE_MULTI_SPACE_RE = re.compile(r"(?<=\S)[ \t]{2,}")
+
+
+def _strip_inline_ref_tags(text: str) -> str:
+    """Remove stray inline [C*]/[T*]/[E*] reference tags while preserving formatting."""
+    if not text:
+        return text
+    cleaned_lines: list[str] = []
+    for line in text.split("\n"):
+        cleaned = _INLINE_REF_TAG_RE.sub("", line)
+        if cleaned != line:
+            cleaned = _SPACE_BEFORE_PUNCT_RE.sub(r"\1", cleaned)
+            cleaned = _INLINE_MULTI_SPACE_RE.sub(" ", cleaned)
+            cleaned = cleaned.rstrip(" \t")
+            if line and not line[0].isspace():
+                cleaned = cleaned.lstrip(" \t")
+        cleaned_lines.append(cleaned)
+    return "\n".join(cleaned_lines)
 
 
 def _chunk_sort_key(chunk_id: str | None, doc_id: str = "") -> tuple[str, int, int, str]:
@@ -338,10 +358,11 @@ class AnswerAgent:
             default_citations=citations,
             documents=documents,
         )
+        clean_answer = _strip_inline_ref_tags(synthesized.answer)
         return (
             QueryResponse(
                 session_id=request.session_id,
-                answer=synthesized.answer,
+                answer=clean_answer,
                 chosen_mode=chosen_mode,
                 citations=resolved_citations,
                 used_web_fallback=False,
