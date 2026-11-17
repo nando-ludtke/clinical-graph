@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     # Knowledge graph traversal depth
     graph_k_hops: int = Field(default=2, ge=1)
 
+    # Per-client API rate limiting
+    rate_limit_enabled: bool = True
+    rate_limit_requests: int = Field(default=60, ge=1)
+    rate_limit_window_seconds: int = Field(default=60, ge=1)
+
     # Outbound LLM concurrency limit
     max_concurrent_llm_calls: int = Field(
         default=5,

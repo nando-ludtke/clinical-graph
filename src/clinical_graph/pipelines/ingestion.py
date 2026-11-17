@@ -239,6 +239,7 @@ class IngestionPipeline:
         conditions: list[str] | None = None,
         target_populations: list[str] | None = None,
         specialties: list[str] | None = None,
+        is_frozen: bool = False,
         classify: bool = False,
         extract: bool = False,
         api_key: str | None = None,
@@ -269,6 +270,7 @@ class IngestionPipeline:
                 conditions=conditions or [],
                 target_populations=target_populations or [],
                 specialties=specialties or [],
+                is_frozen=is_frozen,
             ),
         )
         result = await self.ingest_document_with_report(
@@ -300,6 +302,7 @@ class IngestionPipeline:
         conditions: list[str] | None = None,
         target_populations: list[str] | None = None,
         specialties: list[str] | None = None,
+        is_frozen: bool = False,
         classify: bool = False,
         extract: bool = False,
         api_key: str | None = None,
@@ -315,6 +318,7 @@ class IngestionPipeline:
             conditions=conditions,
             target_populations=target_populations,
             specialties=specialties,
+            is_frozen=is_frozen,
             classify=classify,
             extract=extract,
             api_key=api_key,

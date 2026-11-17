@@ -10,7 +10,7 @@ EXPECTED_DEFAULT_VERSIONS = (
     ("graph_extraction", "v1"),
     ("table_summary", "v1"),
     ("query_rewrite", "v3"),
-    ("answer_synthesis", "v3"),
+    ("answer_synthesis", "v4"),
     ("document_classifier", "v1"),
 )
 
@@ -50,6 +50,16 @@ def test_load_prompt_answer_synthesis_v3() -> None:
     assert v3_template.version == "v3"
     assert "SynthesizedAnswer" in v3_template.system_prompt
     assert "ref_id" in v3_template.system_prompt
+
+
+def test_load_prompt_answer_synthesis_v4() -> None:
+    v4_template = load_prompt("answer_synthesis", version="v4")
+    assert v4_template.name == "answer_synthesis"
+    assert v4_template.version == "v4"
+    assert "STRICT NO-PRETRAINING RULE" in v4_template.system_prompt
+    assert "STRICTLY VERBATIM" in v4_template.system_prompt
+    assert "NEVER cite graph edge tags" in v4_template.system_prompt
+    assert '"citations": []' in v4_template.system_prompt
 
 
 def test_load_prompt_missing_raises_file_not_found() -> None:

@@ -4,7 +4,7 @@
 
 ## Pipelines Overview
 
-The architecture separates **Core (Implemented)** components from **Planned (Phase 2)** safety, search, and verification layers.
+The architecture separates **Core (Implemented)** components from **Optional / Planned (Phase 2)** safety, search, and verification layers.
 
 ```mermaid
 flowchart TD
@@ -51,10 +51,7 @@ flowchart TD
   - **DocumentClassifier (Optional)**: Activated via `classify=true` to run deterministic PII/PHI regex screening and LLM `DocType` allowlist classification before persistence.
   - **Hybrid Retrieval (`rag` / `hybrid` / `auto`)**: `QueryRewriter` (`v3`) expands conversational queries into standalone search queries and routes `auto` requests to `rag` (direct `is_chunk` + `is_table` search fused with Reciprocal Rank Fusion) or `hybrid` (parallel `is_chunk`/`is_table` search and `is_node` seed search + $k$-hop `DiGraph` traversal with IDF-weighted BM25, bridge-bonus, and hub-damped edge ranking, fused via RRF).
   - **Answer Agent (`v3`)**: Synthesizes strictly grounded responses (`SynthesizedAnswer` with `CitationQuote(ref_id, quote)`) from matched concepts, ranked graph edges, retrieved chunks/tables, and supporting document metadata, resolving each quote into a `CitationPassage` with `chunk_id` and `<mark>` highlights.
-- **Planned (Phase 2)**:
-  - **clinical-guard (3-Gate Middleware)**: Document ingestion screening (Gate 1), query entry screening (Gate 2), and search query formatting (Gate 3), controlled via `enable_guardrails`.
-  - **Verified Internet Search + Source Auditor**: External fallback retrieval with source credibility auditing when local graph/vector context is insufficient, controlled via `enable_web_fallback`.
-  - **Independent Audit Agent**: Secondary verification pass over generated answers, controlled via `enable_audit_agent`.
+- **Optional / Planned (Phase 2)** *(dashed amber nodes in diagram; detailed in [Optional Improvements](#optional-improvements))*: Optional safety, external search, and verification layers (`clinical-guard` Gates 1–3, Verified Internet Search + Source Auditor, and Independent Audit Agent).
 
 ## Module Map (`src/clinical_graph/`)
 
@@ -69,12 +66,15 @@ flowchart TD
 | `pipelines/` | Core | Framework-agnostic `IngestionPipeline` and `QueryPipeline` orchestrating parsing, extraction, retrieval, and synthesis |
 | `prompts/` | Core | Versioned YAML prompt templates (`loader.py`) for extraction, table summary, classification, query rewrite, and answer synthesis |
 | `llm/` | Core | `LiteLLMClient` async wrapper for provider-agnostic model routing and token/cost telemetry |
-| `agents/` | Core / Planned | Core `AnswerAgent` (`v3`), `QueryRewriter` (`v3`), single-pass `GraphExtractor`, `DocumentClassifier`, and planned Independent Audit Agent |
-| `guardrails/` | Planned | `clinical-guard` 3-gate middleware (not yet implemented) |
-| `search/` | Planned | Verified internet search fallback and Source Auditor (not yet implemented) |
+| `agents/` | Core / Optional | Core `AnswerAgent` (`v3`), `QueryRewriter` (`v3`), single-pass `GraphExtractor`, `DocumentClassifier`, and optional Independent Audit Agent (not yet implemented) |
+| `guardrails/` | Optional | `clinical-guard` 3-gate middleware (not yet implemented; see Optional Improvements) |
+| `search/` | Optional | Verified internet search fallback and Source Auditor (not yet implemented; see Optional Improvements) |
 
 ## Optional Improvements
 
+- **clinical-guard (3-Gate Middleware)**: Document ingestion screening (Gate 1), query entry screening (Gate 2), and search query formatting (Gate 3), controlled via `enable_guardrails`.
+- **Verified Internet Search + Source Auditor**: External fallback retrieval with source credibility auditing when local graph/vector context is insufficient, controlled via `enable_web_fallback`.
+- **Independent Audit Agent**: Secondary verification pass over generated answers, controlled via `enable_audit_agent`.
 - **LangFuse Observability**: Enable end-to-end LLM trace, prompt, latency, and cost observability via LiteLLM callbacks (`litellm.success_callback = ["langfuse"]`) with `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` configured in `.env`.
 - **Image & Figure Parsing via VLM**: Extend `DocumentParser` to render embedded PDF figures and charts with `fitz` (`page.get_pixmap()` / image extraction) and generate structured clinical captions or table extractions using a Vision-Language Model (VLM).
 - **Lightweight NER Pre-Filter**: Run a fast local NER model (e.g., spaCy / scispaCy or GLiNER) prior to LLM graph extraction and PII screening to pre-tag biomedical entities and catch residual PHI before calling external LLM APIs.

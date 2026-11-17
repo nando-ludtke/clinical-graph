@@ -340,7 +340,7 @@ def test_disk_document_persistence_and_deletion(tmp_path: Path) -> None:
     )
     record = manager.ingest_document(payload)
 
-    expected_file = storage_dir / f"{record.doc_id}.txt"
+    expected_file = storage_dir / f"{record.doc_id}.md"
     assert record.storage_path == str(expected_file)
     assert expected_file.is_file()
     assert expected_file.read_text(encoding="utf-8") == payload.content

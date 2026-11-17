@@ -21,7 +21,18 @@ from clinical_graph.schemas.query import (
 )
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
-_SENTENCE_SPLIT_RE = re.compile(r"[^\n.!?]+(?:[.!?]+|$)")
+_SENTENCE_SPLIT_RE = re.compile(r"(?:[^\n.!?]|(?<=\d)\.(?=\d))+(?:[.!?]+|$)")
+_CHUNK_ID_ORDER_RE = re.compile(r":(chunk|table):(\d+)$")
+
+
+def _chunk_sort_key(chunk_id: str | None, doc_id: str = "") -> tuple[str, int, int, str]:
+    """Return a deterministic document-order sort key for a chunk or table ID."""
+    cid = chunk_id or ""
+    match = _CHUNK_ID_ORDER_RE.search(cid)
+    if match:
+        kind_rank = 0 if match.group(1) == "chunk" else 1
+        return (doc_id, kind_rank, int(match.group(2)), cid)
+    return (doc_id, 2, 0, cid)
 
 
 def _tokenize(text: str) -> list[str]:
@@ -111,9 +122,12 @@ def _highlight_quote_in_text(
 
     k1 = 1.5
     b = 0.75
+    q_token_set = set(q_tokens)
     best_idx = -1
     best_score = 0.0
     for idx, (_, _, toks) in enumerate(spans):
+        if len(q_token_set & set(toks)) < 2:
+            continue
         tf = Counter(toks)
         dl = len(toks)
         score = 0.0
@@ -443,6 +457,7 @@ class AnswerAgent:
 
         rebuilt: list[Citation] = []
         for doc_id, passages in passages_by_doc.items():
+            passages.sort(key=lambda p: _chunk_sort_key(p.chunk_id, doc_id))
             excerpts = list(dict.fromkeys(p.quote for p in passages if p.quote))
             chunk_ids = list(dict.fromkeys(p.chunk_id for p in passages if p.chunk_id))
             base = base_by_doc.get(doc_id)
@@ -548,47 +563,9 @@ class AnswerAgent:
             seed_summary = ", ".join(f"{nid} ({score:.2f})" for nid, score in seed_nodes)
             sections.append(f"Matched concepts: {seed_summary}.")
 
-        if traversed_edges:
-            edge_lines: list[str] = []
-            for idx, edge in enumerate(traversed_edges[:25], start=1):
-                ref_id = f"E{idx}"
-                line = f"- [{ref_id}] {edge['source']} --[{edge['relation']}]--> {edge['target']}"
-                rel_desc = (edge.get("relationship_description") or "").strip()
-                if rel_desc:
-                    line += f" ({rel_desc})"
-                evidence = edge.get("evidence") or []
-                excerpts = list(
-                    dict.fromkeys(
-                        e["excerpt"].strip()
-                        for e in evidence
-                        if e.get("excerpt") and e["excerpt"].strip()
-                    )
-                )
-                if excerpts:
-                    line += f": {' | '.join(excerpts)}"
-                edge_lines.append(line)
-
-                ev_doc_id: str | None = None
-                ev_chunk_id: str | None = None
-                for entry in evidence:
-                    if entry.get("doc_id"):
-                        ev_doc_id = str(entry["doc_id"])
-                        ev_chunk_id = (
-                            str(entry["chunk_id"]) if entry.get("chunk_id") else None
-                        )
-                        break
-                resolved_text = (
-                    chunk_map.get(ev_chunk_id, "") if ev_chunk_id else ""
-                ) or (" | ".join(excerpts) if excerpts else rel_desc)
-                ref_map[ref_id] = {
-                    "doc_id": ev_doc_id,
-                    "chunk_id": ev_chunk_id,
-                    "text": resolved_text,
-                }
-            sections.append("Graph evidence:\n" + "\n".join(edge_lines))
-
+        chunk_lines: list[str] = []
+        chunk_id_to_ref: dict[str, str] = {}
         if retrieved_chunks:
-            chunk_lines: list[str] = []
             c_idx = 0
             for chunk in retrieved_chunks:
                 text = (
@@ -603,6 +580,8 @@ class AnswerAgent:
                 ref_id = f"C{c_idx}"
                 label = chunk.get("slug") or chunk.get("doc_id", "")
                 cid = chunk.get("chunk_id", "")
+                if cid:
+                    chunk_id_to_ref[cid] = ref_id
                 header = f"[{label}] ({cid})" if cid else f"[{label}]"
                 chunk_lines.append(f"- [{ref_id}] {header}: {text}")
                 ref_map[ref_id] = {
@@ -610,11 +589,9 @@ class AnswerAgent:
                     "chunk_id": cid or None,
                     "text": text,
                 }
-            if chunk_lines:
-                sections.append("Retrieved chunks:\n" + "\n".join(chunk_lines))
 
+        table_lines: list[str] = []
         if retrieved_tables:
-            table_lines: list[str] = []
             t_idx = 0
             for table in retrieved_tables:
                 md = (
@@ -636,8 +613,43 @@ class AnswerAgent:
                     "chunk_id": tid or None,
                     "text": md,
                 }
-            if table_lines:
-                sections.append("Retrieved tables:\n" + "\n".join(table_lines))
+
+        if traversed_edges:
+            edge_lines: list[str] = []
+            for idx, edge in enumerate(traversed_edges[:25], start=1):
+                ref_id = f"E{idx}"
+                line = f"- [{ref_id}] {edge['source']} --[{edge['relation']}]--> {edge['target']}"
+                rel_desc = (edge.get("relationship_description") or "").strip()
+                if rel_desc:
+                    line += f" ({rel_desc})"
+                evidence = edge.get("evidence") or []
+                source_refs = list(
+                    dict.fromkeys(
+                        chunk_id_to_ref[str(e["chunk_id"])]
+                        for e in evidence
+                        if e.get("chunk_id") and str(e["chunk_id"]) in chunk_id_to_ref
+                    )
+                )
+                if source_refs:
+                    line += f" [source: {', '.join(source_refs)}]"
+                else:
+                    excerpts = list(
+                        dict.fromkeys(
+                            e["excerpt"].strip()
+                            for e in evidence
+                            if e.get("excerpt") and e["excerpt"].strip()
+                        )
+                    )
+                    if excerpts:
+                        line += f": {' | '.join(excerpts)}"
+                edge_lines.append(line)
+            sections.append("Graph evidence:\n" + "\n".join(edge_lines))
+
+        if chunk_lines:
+            sections.append("Retrieved chunks:\n" + "\n".join(chunk_lines))
+
+        if table_lines:
+            sections.append("Retrieved tables:\n" + "\n".join(table_lines))
 
         if expanded_passages:
             passage_lines = [

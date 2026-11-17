@@ -16,6 +16,7 @@ from clinical_graph.agents.classifier import (
     DocumentClassifier,
 )
 from clinical_graph.agents.query_rewriter import QueryRewriter, RewrittenQueries
+from clinical_graph.api.rate_limit import SlidingWindowRateLimiter
 from clinical_graph.config import Settings, get_settings
 from clinical_graph.graph.vector_store import DeterministicHashEmbedder, LocalVectorStore
 from clinical_graph.llm.client import LiteLLMClient
@@ -24,6 +25,7 @@ from clinical_graph.schemas.document import (
     DocType,
     DocumentMetadata,
     DocumentRecord,
+    JobStatus,
     LocalRestriction,
     SourceType,
 )
@@ -355,6 +357,11 @@ def test_multi_query_seed_merging_by_max_score_and_trace(
     try:
         app = create_app()
         with TestClient(app) as client:
+            app.state.settings = app.state.settings.model_copy(
+                update={"openai_api_key": None}
+            )
+            app.state.query_rewriter = QueryRewriter(llm_client=None)
+            app.state.answer_agent = AnswerAgent(llm_client=None)
             manager = app.state.knowledge_manager
             manager.graph.vector_store._embedder = DeterministicHashEmbedder()
             app.state.answer_agent = AnswerAgent()
@@ -737,5 +744,369 @@ def test_upload_document_classify_auto_populates_predicted_doc_type(
             stored = manager.db.get_by_id(body["doc_id"])
             assert stored is not None
             assert stored.metadata.doc_type == DocType.DRUG_LABEL
+    finally:
+        get_settings.cache_clear()
+
+
+def test_async_background_ingestion_and_job_polling(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    doc_dir = tmp_path / "documents"
+    graph_dir = tmp_path / "graph"
+    monkeypatch.setenv("CLINICAL_GRAPH_DOCUMENT_STORAGE_DIR", str(doc_dir))
+    monkeypatch.setenv("CLINICAL_GRAPH_GRAPH_STORAGE_DIR", str(graph_dir))
+    get_settings.cache_clear()
+
+    try:
+        app = create_app()
+        with TestClient(app) as client:
+            app.state.knowledge_manager.graph.vector_store._embedder = DeterministicHashEmbedder()
+
+            # 1. JSON ingestion with async_extract=true returns 202 + IngestionJob
+            resp = client.post(
+                "/v1/documents?async_extract=true",
+                json={
+                    "content": "Metformin is recommended as first-line therapy for type 2 diabetes.",
+                    "metadata": {
+                        "title": "Async T2D Guideline",
+                        "doc_type": "guideline",
+                        "source_type": "raw_text",
+                    },
+                },
+            )
+            assert resp.status_code == 202
+            job_payload = resp.json()
+            assert job_payload["job_id"]
+            assert job_payload["title"] == "Async T2D Guideline"
+            assert job_payload["status"] in {
+                JobStatus.QUEUED.value,
+                JobStatus.RUNNING.value,
+                JobStatus.COMPLETED.value,
+            }
+
+            # TestClient runs BackgroundTasks before returning, so polling returns completed
+            poll_resp = client.get(f"/v1/documents/jobs/{job_payload['job_id']}")
+            assert poll_resp.status_code == 200
+            polled = poll_resp.json()
+            assert polled["status"] == JobStatus.COMPLETED.value
+            assert polled["doc_id"] is not None
+            assert polled["result"]["doc_id"] == polled["doc_id"]
+            assert polled["error"] is None
+
+            # Verify document is retrievable via standard GET
+            doc_resp = client.get(f"/v1/documents/{polled['doc_id']}")
+            assert doc_resp.status_code == 200
+            assert doc_resp.json()["metadata"]["title"] == "Async T2D Guideline"
+
+            # Unknown job returns 404 (and is not routed as a document slug)
+            missing_resp = client.get("/v1/documents/jobs/nonexistent-job-id")
+            assert missing_resp.status_code == 404
+    finally:
+        get_settings.cache_clear()
+
+
+def test_sliding_window_rate_limiter_and_http_429_enforcement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Unit test SlidingWindowRateLimiter directly
+    limiter = SlidingWindowRateLimiter(max_requests=2, window_seconds=60)
+    assert limiter.allow("client-a") == (True, 0)
+    assert limiter.allow("client-a") == (True, 0)
+    allowed, retry_after = limiter.allow("client-a")
+    assert allowed is False
+    assert retry_after >= 1
+    assert limiter.allow("client-b") == (True, 0)
+
+    # HTTP 429 + Retry-After header enforcement on FastAPI routes
+    doc_dir = tmp_path / "documents"
+    graph_dir = tmp_path / "graph"
+    monkeypatch.setenv("CLINICAL_GRAPH_DOCUMENT_STORAGE_DIR", str(doc_dir))
+    monkeypatch.setenv("CLINICAL_GRAPH_GRAPH_STORAGE_DIR", str(graph_dir))
+    monkeypatch.setenv("CLINICAL_GRAPH_RATE_LIMIT_ENABLED", "true")
+    monkeypatch.setenv("CLINICAL_GRAPH_RATE_LIMIT_REQUESTS", "2")
+    monkeypatch.setenv("CLINICAL_GRAPH_RATE_LIMIT_WINDOW_SECONDS", "60")
+    get_settings.cache_clear()
+
+    try:
+        app = create_app()
+        with TestClient(app) as client:
+            app.state.knowledge_manager.graph.vector_store._embedder = DeterministicHashEmbedder()
+
+            payload = {
+                "content": "Aspirin is used for secondary prevention of cardiovascular events.",
+                "metadata": {
+                    "title": "Cardio Guideline",
+                    "doc_type": "guideline",
+                    "source_type": "raw_text",
+                },
+            }
+            headers_a = {"X-Forwarded-For": "203.0.113.10"}
+            query_payload = {"query": "Aspirin?", "session_id": "sess-1"}
+            assert client.post("/v1/documents", json=payload, headers=headers_a).status_code == 201
+            assert client.post("/v1/documents", json=payload, headers=headers_a).status_code == 201
+
+            # 3rd request from same client is blocked before reaching the query pipeline
+            blocked = client.post("/v1/query", json=query_payload, headers=headers_a)
+            assert blocked.status_code == 429
+            assert blocked.json()["detail"] == "Rate limit exceeded"
+            assert int(blocked.headers["Retry-After"]) >= 1
+
+            # Different client IP has an independent quota
+            headers_b = {"X-Forwarded-For": "203.0.113.20"}
+            assert client.post("/v1/documents", json=payload, headers=headers_b).status_code == 201
+    finally:
+        get_settings.cache_clear()
+
+
+def test_system_status_and_graph_endpoints(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("CLINICAL_GRAPH_DOCUMENT_STORAGE_DIR", str(tmp_path / "documents"))
+    monkeypatch.setenv("CLINICAL_GRAPH_GRAPH_STORAGE_DIR", str(tmp_path / "graph"))
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("CLINICAL_GRAPH_OPENAI_API_KEY", raising=False)
+    get_settings.cache_clear()
+
+    try:
+        app = create_app()
+        with TestClient(app) as client:
+            app.state.settings = app.state.settings.model_copy(
+                update={"openai_api_key": None}
+            )
+            status_resp = client.get("/v1/system/status")
+            assert status_resp.status_code == 200
+            assert status_resp.json() == {"has_openai_api_key": False}
+
+            app.state.settings = app.state.settings.model_copy(
+                update={"openai_api_key": "sk-configured"}
+            )
+            status_resp_key = client.get("/v1/system/status")
+            assert status_resp_key.status_code == 200
+            assert status_resp_key.json() == {"has_openai_api_key": True}
+
+            graph = app.state.knowledge_manager.graph
+            graph.vector_store._embedder = DeterministicHashEmbedder()
+            graph.upsert_node(
+                "metformin",
+                canonical_name="Metformin",
+                node_type="medication",
+                aliases=["glucophage"],
+                description="First-line biguanide for type 2 diabetes.",
+                doc_id="doc-1",
+            )
+            graph.upsert_node(
+                "t2d",
+                canonical_name="Type 2 Diabetes",
+                node_type="condition",
+                doc_id="doc-1",
+            )
+            graph.upsert_node(
+                "doc-1",
+                canonical_name="Diabetes Guideline",
+                node_type="document",
+                doc_id="doc-1",
+            )
+            graph.upsert_node(
+                "insulin",
+                canonical_name="Insulin",
+                node_type="medication",
+                doc_id="doc-1",
+            )
+            graph.upsert_edge(
+                source="metformin",
+                target="t2d",
+                relation="TREATS",
+                doc_id="doc-1",
+                excerpt="Metformin is first-line therapy for T2D.",
+                weight=8.5,
+                relationship_description="First-line pharmacotherapy.",
+            )
+
+            graph_resp = client.get("/v1/graph")
+            assert graph_resp.status_code == 200
+            payload = graph_resp.json()
+            nodes_by_id = {n["node_id"]: n for n in payload["nodes"]}
+            assert "metformin" in nodes_by_id
+            assert "t2d" in nodes_by_id
+            assert "doc-1" not in nodes_by_id
+            assert "insulin" not in nodes_by_id
+            assert nodes_by_id["metformin"]["canonical_name"] == "Metformin"
+            assert nodes_by_id["metformin"]["aliases"] == ["glucophage"]
+            assert nodes_by_id["metformin"]["doc_ids"] == ["doc-1"]
+
+            isolated_resp = client.get("/v1/graph?include_isolated=true")
+            assert isolated_resp.status_code == 200
+            isolated_nodes_by_id = {n["node_id"]: n for n in isolated_resp.json()["nodes"]}
+            assert "insulin" in isolated_nodes_by_id
+            assert "doc-1" not in isolated_nodes_by_id
+
+            assert len(payload["edges"]) == 1
+            edge = payload["edges"][0]
+            assert edge["id"] == "metformin->t2d"
+            assert edge["source"] == "metformin"
+            assert edge["target"] == "t2d"
+            assert edge["relation"] == "TREATS"
+            assert edge["weight"] == 8.5
+            assert edge["doc_ids"] == ["doc-1"]
+            assert len(edge["evidence"]) == 1
+    finally:
+        get_settings.cache_clear()
+
+
+def test_delete_frozen_document_returns_403(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("CLINICAL_GRAPH_DOCUMENT_STORAGE_DIR", str(tmp_path / "documents"))
+    monkeypatch.setenv("CLINICAL_GRAPH_GRAPH_STORAGE_DIR", str(tmp_path / "graph"))
+    get_settings.cache_clear()
+
+    try:
+        app = create_app()
+        with TestClient(app) as client:
+            app.state.knowledge_manager.graph.vector_store._embedder = DeterministicHashEmbedder()
+            resp = client.post(
+                "/v1/documents",
+                json={
+                    "content": "Frozen example clinical guideline content.",
+                    "metadata": {
+                        "title": "Frozen Example Guideline",
+                        "doc_type": "guideline",
+                        "source_type": "raw_text",
+                        "is_frozen": True,
+                    },
+                },
+            )
+            assert resp.status_code == 201
+            doc_id = resp.json()["doc_id"]
+            assert resp.json()["metadata"]["is_frozen"] is True
+
+            del_resp = client.delete(f"/v1/documents/{doc_id}")
+            assert del_resp.status_code == 403
+            assert del_resp.json()["detail"] == "Frozen example document cannot be removed."
+            assert client.get(f"/v1/documents/{doc_id}").status_code == 200
+    finally:
+        get_settings.cache_clear()
+
+
+def test_job_store_update_step() -> None:
+    from clinical_graph.pipelines.jobs import JobStore
+
+    store = JobStore()
+    job = store.create_job(title="Example Doc")
+    assert job.current_step is None
+
+    store.update_step(job.job_id, "Extracting nodes...")
+    updated = store.get_job(job.job_id)
+    assert updated is not None
+    assert updated.current_step == "Extracting nodes..."
+    assert updated.updated_at >= job.updated_at
+
+    # Unknown job ID should be a safe no-op
+    store.update_step("missing-job-id", "Ignored")
+
+
+def test_query_stream_sse_events(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import json
+
+    monkeypatch.setenv("CLINICAL_GRAPH_DOCUMENT_STORAGE_DIR", str(tmp_path / "documents"))
+    monkeypatch.setenv("CLINICAL_GRAPH_GRAPH_STORAGE_DIR", str(tmp_path / "graph"))
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("CLINICAL_GRAPH_OPENAI_API_KEY", raising=False)
+    get_settings.cache_clear()
+
+    try:
+        app = create_app()
+        with TestClient(app) as client:
+            app.state.settings = app.state.settings.model_copy(
+                update={"openai_api_key": None}
+            )
+            app.state.query_rewriter = QueryRewriter(llm_client=None)
+            app.state.answer_agent = AnswerAgent(llm_client=None)
+            manager = app.state.knowledge_manager
+            manager.graph.vector_store._embedder = DeterministicHashEmbedder()
+
+            doc_resp = client.post(
+                "/v1/documents",
+                json={
+                    "content": "Metformin is recommended as first-line therapy for type 2 diabetes.",
+                    "metadata": {
+                        "title": "T2D Care Standard",
+                        "doc_type": "guideline",
+                        "source_type": "raw_text",
+                    },
+                },
+            )
+            assert doc_resp.status_code == 201
+            doc_id = doc_resp.json()["doc_id"]
+
+            manager.graph.upsert_node(
+                "metformin",
+                canonical_name="Metformin",
+                node_type="medication",
+                doc_id=doc_id,
+            )
+            manager.graph.upsert_node(
+                "type 2 diabetes",
+                canonical_name="Type 2 Diabetes",
+                node_type="condition",
+                doc_id=doc_id,
+            )
+            manager.graph.upsert_edge(
+                source="metformin",
+                target="type 2 diabetes",
+                relation="TREATS",
+                doc_id=doc_id,
+                excerpt="Metformin is recommended as first-line therapy for type 2 diabetes.",
+            )
+
+            with client.stream(
+                "POST",
+                "/v1/query/stream",
+                json={
+                    "query": "What is first-line therapy for type 2 diabetes?",
+                    "session_id": "sse-test-session",
+                },
+            ) as stream_resp:
+                assert stream_resp.status_code == 200
+                assert stream_resp.headers["content-type"].startswith("text/event-stream")
+                raw_body = "".join(stream_resp.iter_text())
+
+            events: list[tuple[str, dict]] = []
+            for block in raw_body.strip().split("\n\n"):
+                lines = block.splitlines()
+                event_name = ""
+                data_raw = ""
+                for line in lines:
+                    if line.startswith("event: "):
+                        event_name = line[len("event: ") :]
+                    elif line.startswith("data: "):
+                        data_raw = line[len("data: ") :]
+                if event_name:
+                    events.append((event_name, json.loads(data_raw)))
+
+            names = [name for name, _ in events]
+            assert names == ["rewrite", "retrieval", "synthesizing", "done"]
+
+            events_by_name = dict(events)
+            assert "search_queries" in events_by_name["rewrite"]
+            assert events_by_name["rewrite"]["chosen_mode"] in ("rag", "hybrid")
+            assert "chunk_count" in events_by_name["retrieval"]
+            assert "seed_nodes" in events_by_name["retrieval"]
+            assert "highlighted_edges" in events_by_name["retrieval"]
+            assert "evidence_items" in events_by_name["retrieval"]
+            assert len(events_by_name["retrieval"]["evidence_items"]) <= 10
+            for item in events_by_name["retrieval"]["evidence_items"]:
+                assert set(item.keys()) == {"id", "label", "source", "node_ids"}
+                assert item["source"] in ("rag", "graph", "table")
+            assert events_by_name["synthesizing"] == {"status": "generating_answer"}
+            assert "answer" in events_by_name["done"]
+            assert "citations" in events_by_name["done"]
     finally:
         get_settings.cache_clear()

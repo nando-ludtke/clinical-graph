@@ -9,12 +9,18 @@ from clinical_graph.agents.query_rewriter import QueryRewriter
 from clinical_graph.graph.manager import KnowledgeManager
 from clinical_graph.llm.client import LiteLLMClient
 from clinical_graph.pipelines.ingestion import IngestionPipeline
+from clinical_graph.pipelines.jobs import JobStore
 from clinical_graph.pipelines.query import QueryPipeline
 
 
 def get_knowledge_manager(request: Request) -> KnowledgeManager:
     """Return the ``KnowledgeManager`` instance stored on ``app.state``."""
     return request.app.state.knowledge_manager
+
+
+def get_job_store(request: Request) -> JobStore:
+    """Return the ``JobStore`` instance stored on ``app.state``."""
+    return request.app.state.job_store
 
 
 def get_answer_agent(request: Request) -> AnswerAgent:

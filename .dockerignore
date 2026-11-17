@@ -1,0 +1,10 @@
+.git/
+.venv/
+data/
+test_data/
+eval/results/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+.env
+.DS_Store

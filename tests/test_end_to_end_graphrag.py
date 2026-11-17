@@ -377,7 +377,7 @@ def test_persisted_chunk_ids_and_omissions_reload_on_restart(tmp_path: Path) -> 
     reloaded.load()
     restored = reloaded.db.get_by_id(doc_id)
     assert restored is not None
-    assert restored.storage_path == str(tmp_path / "docs" / f"{doc_id}.txt")
+    assert restored.storage_path == str(tmp_path / "docs" / f"{doc_id}.md")
     assert restored.chunk_ids == [f"{doc_id}:chunk:0"]
     assert len(restored.omissions) == 1
     assert restored.omissions[0].reason == "references"

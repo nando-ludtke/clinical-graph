@@ -3,12 +3,20 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from clinical_graph.agents import AnswerAgent, DocumentClassifier, QueryRewriter
-from clinical_graph.api import documents_router, query_router
+from clinical_graph.api import (
+    documents_router,
+    graph_router,
+    query_router,
+    system_router,
+)
+from clinical_graph.api.rate_limit import SlidingWindowRateLimiter
 from clinical_graph.config import Settings, get_settings
 from clinical_graph.graph import (
     ClinicalKnowledgeGraph,
@@ -17,6 +25,7 @@ from clinical_graph.graph import (
     LocalVectorStore,
 )
 from clinical_graph.llm import LiteLLMClient
+from clinical_graph.pipelines.jobs import JobStore
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +39,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
     )
     app.state.settings = settings
+    app.state.job_store = JobStore()
+    app.state.rate_limiter = SlidingWindowRateLimiter(
+        max_requests=settings.rate_limit_requests,
+        window_seconds=settings.rate_limit_window_seconds,
+    )
     embedder = LiteLLMEmbedder(
         model=settings.embedding_model,
         api_key=settings.openai_api_key,
@@ -78,6 +92,8 @@ def create_app() -> FastAPI:
 
     application.include_router(documents_router)
     application.include_router(query_router)
+    application.include_router(graph_router)
+    application.include_router(system_router)
 
     @application.get("/health", tags=["system"])
     async def health() -> dict[str, str]:
@@ -87,6 +103,18 @@ def create_app() -> FastAPI:
             "service": settings.app_name,
             "version": settings.app_version,
         }
+
+    frontend_dir = Path("frontend")
+    if not frontend_dir.is_dir():
+        repo_frontend = Path(__file__).resolve().parents[2] / "frontend"
+        if repo_frontend.is_dir():
+            frontend_dir = repo_frontend
+    if frontend_dir.is_dir():
+        application.mount(
+            "/",
+            StaticFiles(directory=str(frontend_dir), html=True),
+            name="frontend",
+        )
 
     return application
 

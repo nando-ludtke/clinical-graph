@@ -40,6 +40,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Optional title for --ingest (defaults to derived filename stem).",
     )
     parser.add_argument(
+        "--frozen",
+        action="store_true",
+        help="Mark ingested document as frozen (protected from deletion).",
+    )
+    parser.add_argument(
         "--query",
         type=str,
         default=None,
@@ -276,6 +281,7 @@ async def _run(args: argparse.Namespace) -> None:
             input_path.read_bytes(),
             input_path.name,
             title=title,
+            is_frozen=args.frozen,
             classify=True,
             extract=True,
             api_key=settings.openai_api_key,

@@ -1387,5 +1387,226 @@ async def test_answer_agent_synthesized_citations_populate_passages_and_highligh
     assert passage.match_end == chunk2_text.index(quote) + len(quote)
 
 
+def test_highlight_quote_in_text_sentence_fallback_and_overlap_threshold() -> None:
+    from clinical_graph.agents.answer_agent import _highlight_quote_in_text
+
+    source = (
+        "Patients should be monitored for gastrointestinal side effects during titration. "
+        "Do not initiate empagliflozin if eGFR falls below 20 mL/min/1.73m2. "
+        "Annual retinal screening is recommended for all adults with diabetes."
+    )
+
+    highlighted, start, end = _highlight_quote_in_text(
+        source,
+        "Empagliflozin must not be started when eGFR is below 20.",
+    )
+    assert start is not None and end is not None
+    assert "<mark>Do not initiate empagliflozin if eGFR falls below 20 mL/min/1.73m2.</mark>" in highlighted
+    assert "gastrointestinal" not in highlighted[start:end]
+
+    unmatched, u_start, u_end = _highlight_quote_in_text(
+        source,
+        "Unrelated cardiology anticoagulation warfarin protocol.",
+    )
+    assert unmatched == source
+    assert u_start is None
+    assert u_end is None
+    assert "<mark>" not in unmatched
+
+
+def test_answer_agent_context_links_edges_to_chunks_and_excludes_e_from_ref_map() -> None:
+    doc_id = "doc-ckd"
+    chunk_id = f"{doc_id}:chunk:0"
+    chunk_text = "Empagliflozin 10 mg daily reduces heart failure hospitalization."
+    table_id = f"{doc_id}:table:0"
+    table_md = "| Drug | Dose |\n| --- | --- |\n| Empagliflozin | 10 mg |"
+
+    sections, ref_map = AnswerAgent._build_context_sections_with_refs(
+        request=QueryRequest(session_id="s1", query="What is the empagliflozin dose?"),
+        seed_nodes=[("empagliflozin", 0.9)],
+        traversed_edges=[
+            {
+                "source": "empagliflozin",
+                "relation": "TREATS",
+                "target": "heart_failure",
+                "relationship_description": "Reduces HF hospitalization",
+                "evidence": [
+                    {
+                        "doc_id": doc_id,
+                        "chunk_id": chunk_id,
+                        "excerpt": "Empagliflozin 10 mg daily reduces HF.",
+                    }
+                ],
+            },
+            {
+                "source": "empagliflozin",
+                "relation": "CONTRAINDICATED_WITH",
+                "target": "ketoacidosis",
+                "relationship_description": "Risk of DKA",
+                "evidence": [
+                    {
+                        "doc_id": doc_id,
+                        "chunk_id": f"{doc_id}:chunk:99",
+                        "excerpt": "Discontinue if DKA is suspected.",
+                    }
+                ],
+            },
+        ],
+        documents=[],
+        retrieved_chunks=[
+            {
+                "doc_id": doc_id,
+                "slug": "ckd-sop",
+                "title": "CKD SOP",
+                "chunk_id": chunk_id,
+                "text": chunk_text,
+            }
+        ],
+        retrieved_tables=[
+            {
+                "doc_id": doc_id,
+                "slug": "ckd-sop",
+                "title": "CKD SOP",
+                "table_id": table_id,
+                "markdown": table_md,
+            }
+        ],
+    )
+
+    context_text = "\n\n".join(sections)
+    # E1's chunk_id is in Retrieved chunks -> [source: C1] appended, inline excerpt omitted
+    assert "- [E1] empagliflozin --[TREATS]--> heart_failure (Reduces HF hospitalization) [source: C1]" in context_text
+    assert "Empagliflozin 10 mg daily reduces HF." not in context_text
+    # E2's chunk_id is NOT in Retrieved chunks -> inline excerpt kept
+    assert "- [E2] empagliflozin --[CONTRAINDICATED_WITH]--> ketoacidosis (Risk of DKA): Discontinue if DKA is suspected." in context_text
+
+    # ref_map only contains C* and T*, never E*
+    assert set(ref_map.keys()) == {"C1", "T1"}
+    assert ref_map["C1"]["chunk_id"] == chunk_id
+    assert ref_map["T1"]["chunk_id"] == table_id
+
+
+@pytest.mark.anyio
+async def test_document_order_sorting_for_passages_and_evidence_items(tmp_path: Path) -> None:
+    from clinical_graph.agents.answer_agent import CitationQuote, SynthesizedAnswer
+    from clinical_graph.schemas.query import Citation
+
+    doc_id = "doc-order"
+    retrieved_chunks = [
+        {
+            "doc_id": doc_id,
+            "slug": "order-sop",
+            "title": "Order SOP",
+            "chunk_id": f"{doc_id}:chunk:10",
+            "text": "Tenth chunk monitoring guidance.",
+        },
+        {
+            "doc_id": doc_id,
+            "slug": "order-sop",
+            "title": "Order SOP",
+            "chunk_id": f"{doc_id}:chunk:2",
+            "text": "Second chunk dosing guidance.",
+        },
+        {
+            "doc_id": doc_id,
+            "slug": "order-sop",
+            "title": "Order SOP",
+            "chunk_id": f"{doc_id}:chunk:1",
+            "text": "First chunk overview guidance.",
+        },
+    ]
+    default_citation = Citation(
+        doc_id=doc_id,
+        slug="order-sop",
+        title="Order SOP",
+        doc_type=DocType.INTERNAL_SOP,
+        local_restriction=LocalRestriction.NONE,
+        excerpt="Tenth chunk monitoring guidance.",
+        excerpts=["Tenth chunk monitoring guidance."],
+        chunk_ids=[f"{doc_id}:chunk:10"],
+    )
+    payload = SynthesizedAnswer(
+        answer="Overview, dosing, and monitoring.",
+        citations=[
+            CitationQuote(ref_id="C1", quote="Tenth chunk monitoring guidance."),
+            CitationQuote(ref_id="C2", quote="Second chunk dosing guidance."),
+            CitationQuote(ref_id="C3", quote="First chunk overview guidance."),
+        ],
+    )
+    agent = AnswerAgent(llm_client=_QueuedLLMClient([payload.model_dump_json()]), model="gpt-4o")
+    response, _ = await agent.synthesize_with_usage_async(
+        request=QueryRequest(session_id="order-test", query="Summarize guidance"),
+        seed_nodes=[("guidance", 0.9)],
+        traversed_edges=[],
+        documents=[],
+        citations=[default_citation],
+        retrieved_chunks=retrieved_chunks,
+    )
+
+    assert len(response.citations) == 1
+    cit = response.citations[0]
+    assert [p.chunk_id for p in cit.passages] == [
+        f"{doc_id}:chunk:1",
+        f"{doc_id}:chunk:2",
+        f"{doc_id}:chunk:10",
+    ]
+    assert cit.chunk_ids == [
+        f"{doc_id}:chunk:1",
+        f"{doc_id}:chunk:2",
+        f"{doc_id}:chunk:10",
+    ]
+
+    # Also verify QueryPipeline.run() emits evidence_items in document order
+    manager = _make_manager(tmp_path)
+    c0_text = "First chunk overview guidance about metformin."
+    c1_text = "Second chunk dosing guidance about metformin."
+    c2_text = "Third chunk monitoring guidance about metformin."
+    content = f"{c0_text}\n\n{c1_text}\n\n{c2_text}"
+    doc = manager.ingest_document(
+        DocumentCreate(
+            content=content,
+            metadata=DocumentMetadata(
+                title="Pipe Order",
+                doc_type=DocType.INTERNAL_SOP,
+                local_restriction=LocalRestriction.NONE,
+                source_type=SourceType.RAW_TEXT,
+            ),
+        )
+    )
+    c0_id = f"{doc.doc_id}:chunk:0"
+    c1_id = f"{doc.doc_id}:chunk:1"
+    c2_id = f"{doc.doc_id}:chunk:2"
+    manager.record_processing_metadata(
+        doc_id=doc.doc_id,
+        chunk_ids=[c2_id, c0_id, c1_id],
+        omissions=[],
+        chunk_spans=[
+            ChunkSpan(chunk_id=c2_id, start_char=len(c0_text) + len(c1_text) + 4, end_char=len(content)),
+            ChunkSpan(chunk_id=c0_id, start_char=0, end_char=len(c0_text)),
+            ChunkSpan(chunk_id=c1_id, start_char=len(c0_text) + 2, end_char=len(c0_text) + 2 + len(c1_text)),
+        ],
+    )
+    # Upsert in reverse order; evidence_items must still be sorted in document order
+    manager.graph.vector_store.upsert(c2_id, c2_text, entry_type="chunk", doc_id=doc.doc_id)
+    manager.graph.vector_store.upsert(c0_id, c0_text, entry_type="chunk", doc_id=doc.doc_id)
+    manager.graph.vector_store.upsert(c1_id, c1_text, entry_type="chunk", doc_id=doc.doc_id)
+
+    events: list[tuple[str, object]] = []
+    pipeline = QueryPipeline(manager=manager, answer_agent=AnswerAgent())
+    await pipeline.run(
+        QueryRequest(
+            session_id="pipe-order-sess",
+            query="metformin",
+            retrieval_mode="rag",
+        ),
+        on_event=lambda name, data: events.append((name, data)),
+    )
+    retrieval_events = [data for name, data in events if name == "retrieval"]
+    assert len(retrieval_events) == 1
+    ev_ids = [item["id"] for item in retrieval_events[0]["evidence_items"]]
+    assert ev_ids == [c0_id, c1_id, c2_id]
+
+
+
 
 

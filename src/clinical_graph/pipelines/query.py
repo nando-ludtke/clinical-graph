@@ -9,7 +9,7 @@ import re
 import time
 from typing import Any
 
-from clinical_graph.agents.answer_agent import AnswerAgent
+from clinical_graph.agents.answer_agent import AnswerAgent, _chunk_sort_key
 from clinical_graph.agents.query_rewriter import QueryRewriter
 from clinical_graph.graph.manager import KnowledgeManager
 from clinical_graph.parser.cleaner import strip_references_and_boilerplate
@@ -414,6 +414,15 @@ def _emit(on_step: Callable[[str], None] | None, message: str) -> None:
         on_step(message)
 
 
+def _emit_event(
+    on_event: Callable[[str, dict[str, Any]], None] | None,
+    event: str,
+    data: dict[str, Any],
+) -> None:
+    if on_event is not None:
+        on_event(event, data)
+
+
 def _search_vector_entries(
     vector_store: Any,
     query: str,
@@ -671,6 +680,7 @@ class QueryPipeline:
         *,
         api_key: str | None = None,
         on_step: Callable[[str], None] | None = None,
+        on_event: Callable[[str, dict[str, Any]], None] | None = None,
     ) -> QueryResponse:
         """Run the full hybrid GraphRAG query pipeline and return ``QueryResponse``."""
         total_t0 = time.perf_counter()
@@ -713,6 +723,11 @@ class QueryPipeline:
         _emit(
             on_step,
             f"[query] Rewriting query... done ({latencies_ms['query_rewrite']:.2f} ms, mode={chosen_mode}, queries={len(search_queries)})",
+        )
+        _emit_event(
+            on_event,
+            "rewrite",
+            {"search_queries": search_queries, "chosen_mode": chosen_mode},
         )
 
         vector_store = self.manager.graph.vector_store
@@ -943,6 +958,72 @@ class QueryPipeline:
                     }
                 )
 
+        edge_chunk_nodes: dict[str, list[str]] = {}
+        for edge in ranked_edges:
+            for entry in edge.get("evidence") or []:
+                cid = entry.get("chunk_id")
+                if cid and cid not in edge_chunk_nodes:
+                    edge_chunk_nodes[cid] = [edge["source"], edge["target"]]
+
+        evidence_with_keys: list[tuple[tuple[str, int, int, str], dict[str, Any]]] = []
+        for chunk in retrieved_chunks:
+            cid = chunk["chunk_id"]
+            node_ids = edge_chunk_nodes.get(cid, [])
+            title = chunk.get("title") or chunk.get("slug") or chunk["doc_id"]
+            evidence_with_keys.append(
+                (
+                    _chunk_sort_key(cid, chunk["doc_id"]),
+                    {
+                        "id": cid,
+                        "label": f"{title} ({cid})",
+                        "source": "graph" if cid in edge_chunk_nodes else "rag",
+                        "node_ids": node_ids,
+                    },
+                )
+            )
+            if len(evidence_with_keys) >= 10:
+                break
+
+        if len(evidence_with_keys) < 10:
+            for table in retrieved_tables:
+                tid = table["table_id"]
+                title = table.get("title") or table.get("slug") or table["doc_id"]
+                evidence_with_keys.append(
+                    (
+                        _chunk_sort_key(tid, table["doc_id"]),
+                        {
+                            "id": tid,
+                            "label": f"{title} ({tid})",
+                            "source": "table",
+                            "node_ids": [],
+                        },
+                    )
+                )
+                if len(evidence_with_keys) >= 10:
+                    break
+
+        evidence_items = [
+            item
+            for _, item in sorted(evidence_with_keys, key=lambda pair: pair[0])
+        ]
+
+        _emit_event(
+            on_event,
+            "retrieval",
+            {
+                "chunk_count": len(retrieved_chunks),
+                "table_count": len(retrieved_tables),
+                "seed_nodes": [nid for nid, _ in seed_nodes],
+                "edge_count": len(traversed_edges),
+                "highlighted_edges": [
+                    {"source": e["source"], "target": e["target"]}
+                    for e in ranked_edges[:25]
+                ],
+                "chunk_ids": [c["chunk_id"] for c in retrieved_chunks],
+                "evidence_items": evidence_items,
+            },
+        )
+
         matched_docs: list[DocumentRecord] = []
         citations: list[Citation] = []
         for doc_id in sorted(matched_doc_ids):
@@ -1021,6 +1102,7 @@ class QueryPipeline:
             else None
         )
 
+        _emit_event(on_event, "synthesizing", {"status": "generating_answer"})
         t0 = time.perf_counter()
         response, answer_usage = await self.answer_agent.synthesize_with_usage_async(
             request=payload,

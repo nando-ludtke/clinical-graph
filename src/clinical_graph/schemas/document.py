@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -65,6 +65,7 @@ class DocumentMetadata(BaseModel):
     description: str | None = None
     content_hash: str | None = None
     status: DocumentStatus = DocumentStatus.ACTIVE
+    is_frozen: bool = False
 
     @field_validator("conditions", "target_populations", "specialties", mode="after")
     @classmethod
@@ -152,3 +153,27 @@ class DeletionReport(BaseModel):
     removed_nodes: int
     removed_edges: int
     removed_embeddings: int
+
+
+class JobStatus(str, Enum):
+    """Lifecycle status of an asynchronous background ingestion job."""
+
+    QUEUED = "queued"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class IngestionJob(BaseModel):
+    """Status and result payload for a background document ingestion job."""
+
+    job_id: str
+    status: JobStatus = JobStatus.QUEUED
+    current_step: str | None = None
+    filename: str | None = None
+    title: str | None = None
+    doc_id: str | None = None
+    error: str | None = None
+    result: dict[str, Any] | None = None
+    created_at: datetime
+    updated_at: datetime

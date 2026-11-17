@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>clinical-graph — Clinical Knowledge Graph &amp; Hybrid RAG</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
+</head>
+<body>
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-mark" aria-hidden="true">CG</span>
+      <h1 class="brand-title">clinical-graph</h1>
+    </div>
+
+    <div class="node-legend" id="node-legend" aria-label="Node type filter legend">
+      <button type="button" class="legend-item" data-node-type="drug" title="Filter drug nodes"><span class="legend-dot" style="--dot-color: #0284c7;"></span>drug</button>
+      <button type="button" class="legend-item" data-node-type="drug_class" title="Filter drug_class nodes"><span class="legend-dot" style="--dot-color: #0369a1;"></span>drug_class</button>
+      <button type="button" class="legend-item" data-node-type="condition" title="Filter condition nodes"><span class="legend-dot" style="--dot-color: #dc2626;"></span>condition</button>
+      <button type="button" class="legend-item" data-node-type="symptom" title="Filter symptom nodes"><span class="legend-dot" style="--dot-color: #ea580c;"></span>symptom</button>
+      <button type="button" class="legend-item" data-node-type="biomarker" title="Filter biomarker nodes"><span class="legend-dot" style="--dot-color: #7c3aed;"></span>biomarker</button>
+      <button type="button" class="legend-item" data-node-type="procedure" title="Filter procedure nodes"><span class="legend-dot" style="--dot-color: #0d9488;"></span>procedure</button>
+      <button type="button" class="legend-item" data-node-type="population" title="Filter population nodes"><span class="legend-dot" style="--dot-color: #4f46e5;"></span>population</button>
+    </div>
+
+    <div class="topbar-actions">
+      <button type="button" id="reset-focus-btn" class="btn btn-secondary btn-sm">
+        Reset Focus
+      </button>
+      <button type="button" id="api-key-btn" class="btn btn-outline btn-sm">
+        <span class="status-dot" id="api-key-status-dot"></span>
+        <span id="api-key-status-label">API Key</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main 3-Column Workspace -->
+  <main class="workspace">
+    <!-- Left Sidebar: Documents -->
+    <aside class="sidebar-left" aria-label="Documents">
+      <div class="panel-header">
+        <h2>Documents</h2>
+        <span class="count-badge" id="doc-count-badge">0</span>
+      </div>
+
+      <div class="doc-list-container" id="doc-list" role="list">
+        <div class="empty-state">Loading documents...</div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button type="button" id="open-upload-btn" class="btn btn-primary btn-block">
+          + Upload Document
+        </button>
+      </div>
+    </aside>
+
+    <!-- Center Panel: Cytoscape Graph & Bottom Pipeline Visualizer -->
+    <section class="center-panel" aria-label="Knowledge Graph">
+      <div class="graph-wrapper">
+        <div id="cy" class="cy-canvas" aria-label="Interactive Clinical Knowledge Graph"></div>
+
+        <!-- Graph Empty / Loading Overlay -->
+        <div class="graph-overlay hidden" id="graph-empty-overlay">
+          <p>No graph entities loaded yet.</p>
+        </div>
+
+        <!-- Hover Tooltip -->
+        <div class="graph-tooltip hidden" id="graph-tooltip" role="tooltip"></div>
+
+        <!-- Node / Edge Inspector Bar -->
+        <div class="inspector-bar hidden" id="inspector-bar">
+          <div class="inspector-header">
+            <span class="inspector-badge" id="inspector-kind">NODE</span>
+            <strong class="inspector-title" id="inspector-title"></strong>
+            <button type="button" id="close-inspector-btn" class="icon-btn" title="Clear selection" aria-label="Clear selection">&times;</button>
+          </div>
+          <div class="inspector-body" id="inspector-body"></div>
+        </div>
+      </div>
+
+      <!-- Bottom Pipeline Visualizer -->
+      <section class="pipeline-bar hidden" id="pipeline-bar" aria-label="Real-Time Query Pipeline">
+        <div class="pipeline-header">
+          <span class="pipeline-title">Query Pipeline</span>
+          <span class="pipeline-status" id="pipeline-status-text">Idle</span>
+        </div>
+        <div class="pipeline-stages">
+          <!-- Step 1: Search Strings -->
+          <div class="pipeline-stage" id="stage-rewrite">
+            <div class="stage-header">
+              <span class="stage-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="8.5" cy="8.5" r="5" />
+                  <path d="M12.5 12.5L16.5 16.5" stroke-linecap="round" />
+                </svg>
+              </span>
+              <span class="stage-label">Search Strings</span>
+              <span class="stage-check" aria-hidden="true">&#10003;</span>
+            </div>
+            <div class="stage-body">
+              <div class="rewrite-wrapper" id="rewrite-wrapper">
+                <span class="rewrite-compact-pill hidden" id="rewrite-compact-pill">0 queries</span>
+                <div class="rewrite-chips" id="rewrite-chips"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: RAG & Graph -->
+          <div class="pipeline-stage" id="stage-route">
+            <div class="stage-header">
+              <span class="stage-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M4 6h12M4 10h8M4 14h10" stroke-linecap="round" />
+                </svg>
+              </span>
+              <span class="stage-label">RAG &amp; Graph</span>
+              <span class="stage-check" aria-hidden="true">&#10003;</span>
+            </div>
+            <div class="stage-body">
+              <div class="mode-tiles">
+                <div class="mode-tile" id="mode-icon-rag" title="Vector &amp; Chunk RAG">
+                  <svg class="mode-tile-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <rect x="4" y="3" width="12" height="14" rx="2" />
+                    <path d="M7 7h6M7 10h6M7 13h4" stroke-linecap="round" />
+                  </svg>
+                  <span class="mode-tile-label">RAG</span>
+                  <span class="mode-tile-check" aria-hidden="true">&#10003;</span>
+                </div>
+                <div class="mode-tile" id="mode-icon-graph" title="Knowledge Graph Traversal">
+                  <svg class="mode-tile-svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7">
+                    <circle cx="5" cy="10" r="2.2" />
+                    <circle cx="15" cy="5" r="2.2" />
+                    <circle cx="15" cy="15" r="2.2" />
+                    <path d="M7 9l6-3M7 11l6 3" />
+                  </svg>
+                  <span class="mode-tile-label">Graph</span>
+                  <span class="mode-tile-check" aria-hidden="true">&#10003;</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Evidence Stack -->
+          <div class="pipeline-stage" id="stage-retrieval">
+            <div class="stage-header">
+              <span class="stage-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M6 4h6l4 4v8a1.5 1.5 0 0 1-1.5 1.5h-8.5A1.5 1.5 0 0 1 4.5 16V5.5A1.5 1.5 0 0 1 6 4z" />
+                  <path d="M12 4v4h4" />
+                </svg>
+              </span>
+              <span class="stage-label">Evidence Stack</span>
+              <span class="stage-check" aria-hidden="true">&#10003;</span>
+            </div>
+            <div class="stage-body">
+              <div class="evidence-stack" id="evidence-stack"></div>
+            </div>
+          </div>
+
+          <!-- Step 4: Synthesis -->
+          <div class="pipeline-stage" id="stage-synthesis">
+            <div class="stage-header">
+              <span class="stage-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M10 3l1.6 4.4L16 9l-4.4 1.6L10 15l-1.6-4.4L4 9l4.4-1.6L10 3z" stroke-linejoin="round" />
+                </svg>
+              </span>
+              <span class="stage-label">Synthesis</span>
+              <span class="stage-check" aria-hidden="true">&#10003;</span>
+            </div>
+            <div class="stage-body">
+              <div class="synth-status-pill" id="synth-status-pill">
+                <span class="synth-idle-text">Waiting</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- Right Panel: Chat, Disabled Filters & Citations -->
+    <aside class="chat-panel" aria-label="Clinical Query Chat">
+      <div class="panel-header">
+        <h2>Clinical Query</h2>
+      </div>
+
+      <!-- Visibly Disabled Filter Bar -->
+      <div class="filter-bar" title="Filters disabled (coming soon)">
+        <div class="filter-field">
+          <label for="filter-local-restriction">Region</label>
+          <select id="filter-local-restriction" disabled title="Filters disabled (coming soon)">
+            <option value="">All regions</option>
+            <option value="US">US</option>
+            <option value="DE">DE</option>
+            <option value="EU">EU</option>
+            <option value="UK">UK</option>
+            <option value="CH">CH</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="filter-doc-type">Doc Type</label>
+          <select id="filter-doc-type" disabled title="Filters disabled (coming soon)">
+            <option value="">All types</option>
+            <option value="guideline">Guideline</option>
+            <option value="drug_label">Drug Label</option>
+            <option value="peer_reviewed">Peer Reviewed</option>
+            <option value="clinical_trial">Clinical Trial</option>
+            <option value="internal_sop">Internal SOP</option>
+          </select>
+        </div>
+        <span class="filter-soon-tag">Coming soon</span>
+      </div>
+
+      <!-- Chat Messages -->
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-welcome">
+          Ask a clinical question grounded in the ingested guidelines, drug labels, and knowledge graph.
+        </div>
+      </div>
+
+      <!-- Query Input Form -->
+      <form class="chat-input-form" id="chat-form">
+        <div class="chat-controls-row">
+          <label for="retrieval-mode-select" class="mode-label">Mode:</label>
+          <select id="retrieval-mode-select" class="mode-select">
+            <option value="auto" selected>auto</option>
+            <option value="rag">rag</option>
+            <option value="hybrid">hybrid</option>
+          </select>
+        </div>
+        <div class="chat-input-row">
+          <textarea
+            id="chat-input"
+            rows="2"
+            placeholder="Ask a clinical question..."
+            required
+          ></textarea>
+          <button type="submit" id="send-query-btn" class="btn btn-primary">Send</button>
+        </div>
+      </form>
+    </aside>
+  </main>
+
+  <!-- Startup / Settings OpenAI API Key Modal -->
+  <div class="modal-backdrop hidden" id="api-key-modal" role="dialog" aria-modal="true" aria-labelledby="api-key-modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="api-key-modal-title">OpenAI API Key Required</h3>
+        <button type="button" id="close-api-key-modal-btn" class="icon-btn hidden" aria-label="Close">&times;</button>
+      </div>
+      <p class="modal-desc">
+        No server-side OpenAI API key is configured. Enter your OpenAI API key to store it in this browser session (<code>sessionStorage</code>) and send it via <code>X-OpenAI-API-Key</code>.
+      </p>
+      <form id="api-key-form">
+        <div class="form-group">
+          <label for="api-key-input">OpenAI API Key</label>
+          <input type="password" id="api-key-input" placeholder="sk-..." autocomplete="off" required />
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="clear-api-key-btn" class="btn btn-secondary hidden">Clear Session Key</button>
+          <button type="submit" class="btn btn-primary">Save Key</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Upload Document Modal -->
+  <div class="modal-backdrop hidden" id="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="upload-modal-title">Upload Clinical Document</h3>
+        <button type="button" id="close-upload-modal-btn" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+      <form id="upload-form">
+        <div class="form-group">
+          <label for="upload-file">Document File (.pdf, .txt, .md)</label>
+          <input type="file" id="upload-file" accept=".pdf,.txt,.md" required />
+        </div>
+        <div class="form-group">
+          <label for="upload-title">Title (optional)</label>
+          <input type="text" id="upload-title" placeholder="Defaults to filename" />
+        </div>
+        <div class="form-group">
+          <label for="upload-restriction">Local Restriction</label>
+          <select id="upload-restriction">
+            <option value="none" selected>none</option>
+            <option value="US">US</option>
+            <option value="DE">DE</option>
+            <option value="EU">EU</option>
+            <option value="UK">UK</option>
+            <option value="CH">CH</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="upload-description">Description (optional)</label>
+          <textarea id="upload-description" rows="2" placeholder="Brief clinical context or notes..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-upload-btn" class="btn btn-secondary">Cancel</button>
+          <button type="submit" id="submit-upload-btn" class="btn btn-primary">Upload &amp; Extract</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Citation Drawer / Modal -->
+  <div class="modal-backdrop hidden" id="citation-modal" role="dialog" aria-modal="true" aria-labelledby="citation-modal-title">
+    <div class="modal-card modal-card-citation">
+      <div class="modal-header">
+        <div>
+          <h3 id="citation-modal-title">Citation Inspector</h3>
+          <p class="modal-subtitle" id="citation-modal-subtitle"></p>
+        </div>
+        <button type="button" id="close-citation-modal-btn" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+      <div class="citation-split-body" id="citation-modal-body">
+        <div class="citation-doc-pane markdown-body" id="citation-doc-pane"></div>
+        <div class="citation-quotes-pane" id="citation-quotes-pane"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Viewer Popup -->
+  <div class="doc-viewer-modal hidden" id="doc-viewer-modal" role="dialog" aria-modal="false" aria-labelledby="doc-viewer-title">
+    <div class="doc-viewer-card">
+      <div class="modal-header">
+        <div>
+          <h3 id="doc-viewer-title">Document Viewer</h3>
+          <p class="modal-subtitle" id="doc-viewer-subtitle"></p>
+        </div>
+        <button type="button" id="close-doc-viewer-btn" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+      <div class="doc-viewer-body markdown-body" id="doc-viewer-body"></div>
+    </div>
+  </div>
+
+  <!-- Notification Popup Modal (Success / Error) -->
+  <div class="modal-backdrop hidden" id="notice-modal" role="alertdialog" aria-modal="true" aria-labelledby="notice-modal-title">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <h3 id="notice-modal-title">Notice</h3>
+        <button type="button" id="close-notice-modal-btn" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+      <p id="notice-modal-message" class="notice-message"></p>
+      <div class="modal-actions">
+        <button type="button" id="ok-notice-modal-btn" class="btn btn-primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@14.1.2/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

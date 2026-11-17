@@ -96,20 +96,25 @@ def test_parse_pdf_with_mocked_pymupdf(tmp_path: Path) -> None:
 
     assert parsed.source_type == SourceType.UPLOADED_PDF
     assert parsed.page_count == 2
-    assert parsed.text == "Page 1: Clinical Overview\n\f\nPage 2: Contraindications"
-    assert len(parsed.tables) == 1
-    assert parsed.tables[0] == (
+    expected_table = (
         "| Drug | Dose |\n"
         "| --- | --- |\n"
         "| Metformin | 500 mg BID |\n"
         "| Lisinopril | 10 mg daily |"
     )
+    assert parsed.text == (
+        f"Page 1: Clinical Overview\n\n{expected_table}\n\f\nPage 2: Contraindications"
+    )
+    assert len(parsed.tables) == 1
+    assert parsed.tables[0] == expected_table
     assert parsed_from_file == parsed
 
     mock_pymupdf.open.assert_called_with(stream=pdf_bytes, filetype="pdf")
-    assert page_1.get_text.call_count == 2
+    assert page_1.get_text.call_count == 4
+    page_1.get_text.assert_any_call("dict")
     page_1.get_text.assert_called_with("text")
-    assert page_2.get_text.call_count == 2
+    assert page_2.get_text.call_count == 4
+    page_2.get_text.assert_any_call("dict")
     page_2.get_text.assert_called_with("text")
 
 
@@ -356,4 +361,180 @@ def test_pdf_parsed_table_entries_capture_context_and_page_number() -> None:
     assert entry.page_number == 1
     assert "| Drug | eGFR Threshold |" in entry.markdown
     assert "| Metformin | < 30 mL/min |" in entry.markdown
+
+
+def test_is_toc_table_detects_dotted_leaders_and_headings() -> None:
+    from clinical_graph.parser.document_parser import _is_toc_table
+
+    dotted_toc = (
+        "| Section | Page |\n"
+        "| --- | --- |\n"
+        "| 1. Introduction ...................... | 4 |\n"
+        "| 2. Diagnosis . . . . . . . . . . . . . | 9 |\n"
+        "| 3. Treatment ......................... | 15 |"
+    )
+    assert _is_toc_table(dotted_toc) is True
+
+    german_toc = (
+        "| Inhaltsverzeichnis | Seite |\n"
+        "| --- | --- |\n"
+        "| 1 Einleitung | 3 |\n"
+        "| 2 Diagnostik | 8 |\n"
+        "| 3 Therapie | 14 |"
+    )
+    assert _is_toc_table(german_toc) is True
+
+    english_toc = (
+        "| Table of Contents | |\n"
+        "| --- | --- |\n"
+        "| Overview | 1 |\n"
+        "| Dosing | 5 |"
+    )
+    assert _is_toc_table(english_toc) is True
+
+    clinical_table = (
+        "| Drug | Dose | eGFR |\n"
+        "| --- | --- | --- |\n"
+        "| Metformin | 500 mg BID | >= 30 mL/min |\n"
+        "| Empagliflozin | 10 mg daily | >= 20 mL/min |"
+    )
+    assert _is_toc_table(clinical_table) is False
+
+
+def test_parse_pdf_skips_toc_tables_and_keeps_clinical_tables() -> None:
+    toc_table = MagicMock()
+    toc_table.extract.return_value = [
+        ["Inhaltsverzeichnis", "Seite"],
+        ["1 Einleitung ..........", "3"],
+        ["2 Therapie ............", "10"],
+    ]
+
+    clinical_table = MagicMock()
+    clinical_table.extract.return_value = [
+        ["Drug", "Dose"],
+        ["Empagliflozin", "10 mg daily"],
+    ]
+    clinical_table.bbox = (0, 100, 200, 150)
+
+    fake_page = MagicMock()
+    fake_page.get_text.side_effect = lambda mode="text": (
+        "Clinical dosing guidance." if mode == "text" else []
+    )
+    fake_page.find_tables.return_value = SimpleNamespace(tables=[toc_table, clinical_table])
+
+    fake_doc = MagicMock()
+    fake_doc.__len__.return_value = 1
+    fake_doc.__iter__.return_value = iter([fake_page])
+    fake_doc.__enter__.return_value = fake_doc
+    fake_doc.__exit__.return_value = False
+
+    fake_pymupdf = SimpleNamespace(open=MagicMock(return_value=fake_doc))
+    with patch.dict(sys.modules, {"pymupdf": fake_pymupdf}):
+        parsed = DocumentParser().parse_bytes(b"%PDF-1.4", "guideline.pdf")
+
+    assert len(parsed.tables) == 1
+    assert len(parsed.table_entries) == 1
+    assert "Empagliflozin" in parsed.tables[0]
+    assert "Inhaltsverzeichnis" not in parsed.tables[0]
+
+
+def test_parse_pdf_dict_font_aware_markdown_formatting() -> None:
+    # Median body font size will be 10.0 across the majority of spans.
+    page_dict = {
+        "blocks": [
+            {
+                "type": 0,
+                "lines": [
+                    {
+                        "spans": [
+                            {"text": "Clinical Guideline", "size": 16.0, "flags": 16},
+                        ]
+                    }
+                ],
+            },
+            {
+                "type": 0,
+                "lines": [
+                    {
+                        "spans": [
+                            {"text": "Pharmacotherapy", "size": 13.0, "flags": 16},
+                        ]
+                    }
+                ],
+            },
+            {
+                "type": 0,
+                "lines": [
+                    {
+                        "spans": [
+                            {"text": "First-Line Therapy", "size": 11.0, "flags": 16},
+                        ]
+                    }
+                ],
+            },
+            {
+                "type": 0,
+                "lines": [
+                    {
+                        "spans": [
+                            {"text": "Start ", "size": 10.0, "flags": 0},
+                            {"text": "Metformin", "size": 10.0, "flags": 16},
+                            {"text": " for ", "size": 10.0, "flags": 0},
+                            {"text": "type 2 diabetes", "size": 10.0, "flags": 2},
+                            {"text": " in adults.", "size": 10.0, "flags": 0},
+                        ]
+                    },
+                    {
+                        "spans": [
+                            {"text": "• Monitor eGFR regularly", "size": 10.0, "flags": 0},
+                        ]
+                    },
+                    {
+                        "spans": [
+                            {"text": "▪ ", "size": 10.0, "flags": 16},
+                            {"text": "Adjust dose below 45 mL/min", "size": 10.0, "flags": 0},
+                        ]
+                    },
+                ],
+            },
+            {
+                # Image block should be ignored.
+                "type": 1,
+                "lines": [],
+            },
+        ]
+    }
+
+    fake_table = MagicMock()
+    fake_table.extract.return_value = [
+        ["eGFR", "Action"],
+        [">= 45", "Full dose"],
+    ]
+    fake_table.bbox = (0, 200, 300, 260)
+
+    fake_page = MagicMock()
+    fake_page.get_text.side_effect = lambda mode="text": (
+        page_dict if mode == "dict" else []
+    )
+    fake_page.find_tables.return_value = SimpleNamespace(tables=[fake_table])
+
+    fake_doc = MagicMock()
+    fake_doc.__len__.return_value = 1
+    fake_doc.__iter__.return_value = iter([fake_page])
+    fake_doc.__enter__.return_value = fake_doc
+    fake_doc.__exit__.return_value = False
+
+    fake_pymupdf = SimpleNamespace(open=MagicMock(return_value=fake_doc))
+    with patch.dict(sys.modules, {"pymupdf": fake_pymupdf}):
+        parsed = DocumentParser().parse_bytes(b"%PDF-1.4", "rich.pdf")
+
+    assert "# Clinical Guideline" in parsed.text
+    assert "## Pharmacotherapy" in parsed.text
+    assert "### First-Line Therapy" in parsed.text
+    assert "Start **Metformin** for *type 2 diabetes* in adults." in parsed.text
+    assert "- Monitor eGFR regularly" in parsed.text
+    assert "- Adjust dose below 45 mL/min" in parsed.text
+    assert "| eGFR | Action |" in parsed.text
+    assert "| >= 45 | Full dose |" in parsed.text
+
 

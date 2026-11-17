@@ -64,7 +64,7 @@ class KnowledgeManager:
             record = self.db.add_document(payload)
             if self.storage_dir is not None:
                 self.storage_dir.mkdir(parents=True, exist_ok=True)
-                file_path = self.storage_dir / f"{record.doc_id}.txt"
+                file_path = self.storage_dir / f"{record.doc_id}.md"
                 file_path.write_text(record.content, encoding="utf-8")
                 updated = self.db.update_storage_path(record.doc_id, str(file_path))
                 if updated is not None:
@@ -147,13 +147,15 @@ class KnowledgeManager:
             )
 
     def _delete_disk_file(self, doc_id: str, record: DocumentRecord | None) -> bool:
-        candidate: Path | None = None
+        candidates: list[Path] = []
         if record is not None and record.storage_path is not None:
-            candidate = Path(record.storage_path)
-        elif self.storage_dir is not None:
-            candidate = self.storage_dir / f"{doc_id}.txt"
+            candidates.append(Path(record.storage_path))
+        if self.storage_dir is not None:
+            candidates.append(self.storage_dir / f"{doc_id}.md")
+            candidates.append(self.storage_dir / f"{doc_id}.txt")
 
-        if candidate is not None and candidate.is_file():
-            candidate.unlink()
-            return True
+        for candidate in candidates:
+            if candidate.is_file():
+                candidate.unlink()
+                return True
         return False
