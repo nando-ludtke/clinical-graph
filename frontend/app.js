@@ -43,10 +43,21 @@
     docViewerRequestSeq: 0,
     citationModalRequestSeq: 0,
     apiGuideLang: "python",
+    activeView: "overview",
+    workspaceInitializedFit: false,
   };
 
   // --- DOM References ---
   const el = {
+    navOverviewBtn: document.getElementById("nav-overview-btn"),
+    navWorkspaceBtn: document.getElementById("nav-workspace-btn"),
+    overviewView: document.getElementById("overview-view"),
+    workspaceView: document.getElementById("workspace-view"),
+    overviewApiGuideBtn: document.getElementById("overview-api-guide-btn"),
+    openWorkspaceCta: document.getElementById("open-workspace-cta"),
+    benchmarkSummaryGrid: document.getElementById("benchmark-summary-grid"),
+    benchmarkQueriesList: document.getElementById("benchmark-queries-list"),
+
     nodeLegend: document.getElementById("node-legend"),
     zoomInBtn: document.getElementById("zoom-in-btn"),
     zoomOutBtn: document.getElementById("zoom-out-btn"),
@@ -2246,8 +2257,228 @@ print(len(graph["nodes"]), len(graph["edges"]))`,
     el.apiGuideModal.classList.add("hidden");
   }
 
+  // --- View Switcher & Benchmarks ---
+  function switchView(viewName) {
+    const isWorkspace = viewName === "workspace";
+    state.activeView = isWorkspace ? "workspace" : "overview";
+
+    if (el.overviewView) {
+      el.overviewView.classList.toggle("hidden", isWorkspace);
+    }
+    if (el.workspaceView) {
+      el.workspaceView.classList.toggle("hidden", !isWorkspace);
+    }
+    if (el.navOverviewBtn) {
+      el.navOverviewBtn.classList.toggle("active", !isWorkspace);
+      el.navOverviewBtn.setAttribute("aria-pressed", String(!isWorkspace));
+    }
+    if (el.navWorkspaceBtn) {
+      el.navWorkspaceBtn.classList.toggle("active", isWorkspace);
+      el.navWorkspaceBtn.setAttribute("aria-pressed", String(isWorkspace));
+    }
+
+    if (isWorkspace && state.cy) {
+      requestAnimationFrame(() => {
+        state.cy.resize();
+        if (!state.workspaceInitializedFit) {
+          fitGraphToVisibleArea(state.cy);
+          state.baseFitZoom = state.cy.zoom();
+          state.workspaceInitializedFit = true;
+        }
+      });
+    }
+  }
+
+  function formatCostUsd(val) {
+    if (typeof val !== "number" || Number.isNaN(val)) return "—";
+    return `$${val.toFixed(4)}`;
+  }
+
+  function formatLatencyMs(val) {
+    if (typeof val !== "number" || Number.isNaN(val)) return "—";
+    return `${Math.round(val).toLocaleString()} ms`;
+  }
+
+  function formatTokens(val) {
+    if (typeof val !== "number" || Number.isNaN(val)) return "—";
+    return val.toLocaleString();
+  }
+
+  function renderBenchmarksEmpty(message) {
+    if (el.benchmarkSummaryGrid) {
+      el.benchmarkSummaryGrid.innerHTML = `<div class="benchmark-empty">${escapeHtml(message)}</div>`;
+    }
+    if (el.benchmarkQueriesList) {
+      el.benchmarkQueriesList.innerHTML = "";
+    }
+  }
+
+  function renderBenchmarks(data) {
+    if (!data || data.available === false) {
+      renderBenchmarksEmpty("No benchmark telemetry available yet. Run the evaluation suite to populate GET /v1/benchmarks.");
+      return;
+    }
+
+    const summary = data.summary || {};
+    const byMode = summary.by_mode || {};
+    const totalQueries = summary.total_queries ?? 0;
+    const autoMatches = summary.auto_matches ?? 0;
+    const accuracyPct =
+      typeof summary.auto_accuracy_pct === "number"
+        ? `${summary.auto_accuracy_pct.toFixed(1)}%`
+        : "—";
+
+    if (el.benchmarkSummaryGrid) {
+      const modeKeys = ["rag", "hybrid", "auto"];
+      const accuracyCardHtml = `
+        <div class="benchmark-kpi-card">
+          <div class="benchmark-kpi-label"><span>Auto Router Accuracy</span></div>
+          <div class="benchmark-kpi-value">${escapeHtml(accuracyPct)}</div>
+          <div class="benchmark-kpi-sub"><span>${escapeHtml(String(autoMatches))} / ${escapeHtml(String(totalQueries))} queries matched</span></div>
+        </div>
+      `;
+
+      const modeCardsHtml = modeKeys
+        .map((mode) => {
+          const stats = byMode[mode] || {};
+          const isAuto = mode === "auto";
+          return `
+            <div class="benchmark-kpi-card${isAuto ? " benchmark-kpi-card--auto" : ""}">
+              <div class="benchmark-kpi-label">
+                <span>${escapeHtml(mode)}</span>
+                <span class="benchmark-mode-pill benchmark-mode-pill--${escapeHtml(mode)}">${escapeHtml(mode)}</span>
+              </div>
+              <div class="benchmark-kpi-value">${escapeHtml(formatLatencyMs(stats.avg_latency_ms))}</div>
+              <div class="benchmark-kpi-sub">
+                <span>Tokens: <strong>${escapeHtml(formatTokens(stats.total_tokens))}</strong></span>
+                <span>Cost: <strong>${escapeHtml(formatCostUsd(stats.total_cost_usd))}</strong></span>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      el.benchmarkSummaryGrid.innerHTML = accuracyCardHtml + modeCardsHtml;
+    }
+
+    const queries = data.results || data.queries || [];
+    if (!el.benchmarkQueriesList) return;
+
+    if (!Array.isArray(queries) || queries.length === 0) {
+      el.benchmarkQueriesList.innerHTML = `<div class="benchmark-empty">No benchmark query records found.</div>`;
+      return;
+    }
+
+    el.benchmarkQueriesList.innerHTML = queries
+      .map((item) => {
+        const id = item.id || "query";
+        const queryText = item.query || "";
+        const expectedMode = item.expected_mode || "auto";
+        const autoMatch = Boolean(item.auto_matches_expected);
+        const rationale = item.rationale || "";
+        const runs = item.runs || item.modes || {};
+
+        const runsHtml = ["rag", "hybrid", "auto"]
+          .map((mode) => {
+            const run = runs[mode];
+            if (!run) return "";
+            const chosenMode = run.chosen_mode || mode;
+            const citationsCount =
+              typeof run.citation_count === "number"
+                ? run.citation_count
+                : Array.isArray(run.citations)
+                  ? run.citations.length
+                  : 0;
+            const nodesCount = Array.isArray(run.seed_nodes)
+              ? run.seed_nodes.length
+              : (run.seed_nodes_count ?? run.nodes_count ?? 0);
+            const edgesCount = Array.isArray(run.traversed_edges)
+              ? run.traversed_edges.length
+              : (run.traversed_edges_count ?? run.edges_count ?? 0);
+            const preview = run.answer_preview || run.answer || "";
+
+            return `
+              <div class="benchmark-run-card${mode === "auto" ? " benchmark-run-card--auto" : ""}">
+                <div class="benchmark-run-head">
+                  <span class="benchmark-mode-pill benchmark-mode-pill--${escapeHtml(mode)}">${escapeHtml(mode)}</span>
+                  <span class="benchmark-run-chosen">routed: <strong>${escapeHtml(chosenMode)}</strong></span>
+                </div>
+                <div class="benchmark-run-metrics">
+                  <div class="benchmark-run-metric"><span>Latency</span><strong>${escapeHtml(formatLatencyMs(run.latency_ms))}</strong></div>
+                  <div class="benchmark-run-metric"><span>Tokens</span><strong>${escapeHtml(formatTokens(run.total_tokens))}</strong></div>
+                  <div class="benchmark-run-metric"><span>Cost</span><strong>${escapeHtml(formatCostUsd(run.cost_usd))}</strong></div>
+                  <div class="benchmark-run-metric"><span>Citations</span><strong>${escapeHtml(String(citationsCount))}</strong></div>
+                  <div class="benchmark-run-metric"><span>Nodes</span><strong>${escapeHtml(String(nodesCount))}</strong></div>
+                  <div class="benchmark-run-metric"><span>Edges</span><strong>${escapeHtml(String(edgesCount))}</strong></div>
+                </div>
+                <p class="benchmark-run-preview">${escapeHtml(preview)}</p>
+              </div>
+            `;
+          })
+          .join("");
+
+        return `
+          <article class="benchmark-query-card">
+            <button type="button" class="benchmark-query-toggle" aria-expanded="false">
+              <div class="benchmark-query-main">
+                <span class="benchmark-query-id">${escapeHtml(id)}</span>
+                <span class="benchmark-query-text">${escapeHtml(queryText)}</span>
+              </div>
+              <div class="benchmark-query-badges">
+                <span class="benchmark-mode-pill benchmark-mode-pill--${escapeHtml(expectedMode)}">expected: ${escapeHtml(expectedMode)}</span>
+                <span class="benchmark-match-badge ${autoMatch ? "match-ok" : "match-miss"}">${autoMatch ? "Auto Match" : "Mismatch"}</span>
+                <span class="benchmark-chevron" aria-hidden="true">&#9662;</span>
+              </div>
+            </button>
+            <div class="benchmark-query-details">
+              ${rationale ? `<p class="benchmark-rationale"><strong>Rationale:</strong> ${escapeHtml(rationale)}</p>` : ""}
+              <div class="benchmark-runs-grid">${runsHtml}</div>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  async function loadBenchmarks() {
+    try {
+      const resp = await fetch("/v1/benchmarks");
+      if (!resp.ok) {
+        renderBenchmarksEmpty(`Benchmark telemetry unavailable (HTTP ${resp.status}).`);
+        return;
+      }
+      const data = await resp.json();
+      renderBenchmarks(data);
+    } catch {
+      renderBenchmarksEmpty("Unable to load benchmark telemetry from /v1/benchmarks.");
+    }
+  }
+
   // --- Event Listeners ---
   function initEventListeners() {
+    if (el.navOverviewBtn) {
+      el.navOverviewBtn.addEventListener("click", () => switchView("overview"));
+    }
+    if (el.navWorkspaceBtn) {
+      el.navWorkspaceBtn.addEventListener("click", () => switchView("workspace"));
+    }
+    if (el.openWorkspaceCta) {
+      el.openWorkspaceCta.addEventListener("click", () => switchView("workspace"));
+    }
+    if (el.overviewApiGuideBtn) {
+      el.overviewApiGuideBtn.addEventListener("click", openApiGuideModal);
+    }
+    if (el.benchmarkQueriesList) {
+      el.benchmarkQueriesList.addEventListener("click", (e) => {
+        const toggle = e.target.closest(".benchmark-query-toggle");
+        if (!toggle) return;
+        const card = toggle.closest(".benchmark-query-card");
+        if (!card) return;
+        const expanded = card.classList.toggle("expanded");
+        toggle.setAttribute("aria-expanded", String(expanded));
+      });
+    }
+
     if (el.nodeLegend) {
       el.nodeLegend.addEventListener("click", (e) => {
         const pill = e.target.closest(".legend-item[data-node-type]");
@@ -2361,7 +2592,7 @@ print(len(graph["nodes"]), len(graph["edges"]))`,
   async function init() {
     initEventListeners();
     await checkSystemStatus();
-    await Promise.all([loadDocuments(), loadGraph()]);
+    await Promise.all([loadDocuments(), loadGraph(), loadBenchmarks()]);
   }
 
   document.addEventListener("DOMContentLoaded", init);

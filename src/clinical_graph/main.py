@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 
 from clinical_graph.agents import AnswerAgent, DocumentClassifier, QueryRewriter
 from clinical_graph.api import (
+    benchmarks_router,
     documents_router,
     graph_router,
     query_router,
@@ -94,6 +95,7 @@ def create_app() -> FastAPI:
     application.include_router(query_router)
     application.include_router(graph_router)
     application.include_router(system_router)
+    application.include_router(benchmarks_router)
 
     @application.get("/health", tags=["system"])
     async def health() -> dict[str, str]:

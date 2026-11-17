@@ -13,10 +13,9 @@
 # Local document storage
 !data/.gitkeep
 data/*
+*.db-shm
+*.db-wal
 
 # Tests
 !test_data/.gitkeep
 test_data/*
-
-# Eval outputs
-eval/results/

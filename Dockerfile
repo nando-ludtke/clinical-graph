@@ -5,6 +5,7 @@ WORKDIR /app
 COPY pyproject.toml README.md LICENSE ./
 COPY src/ ./src/
 COPY frontend/ ./frontend/
+COPY eval/results/ ./eval/results/
 
 RUN pip install --no-cache-dir .
 

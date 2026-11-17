@@ -1110,3 +1110,82 @@ def test_query_stream_sse_events(
             assert "citations" in events_by_name["done"]
     finally:
         get_settings.cache_clear()
+
+
+def test_get_benchmarks_returns_compact_latest_results(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import json
+
+    monkeypatch.setenv("CLINICAL_GRAPH_DOCUMENT_STORAGE_DIR", str(tmp_path / "documents"))
+    monkeypatch.setenv("CLINICAL_GRAPH_GRAPH_STORAGE_DIR", str(tmp_path / "graph"))
+    monkeypatch.chdir(tmp_path)
+    get_settings.cache_clear()
+
+    results_dir = tmp_path / "eval" / "results"
+    results_dir.mkdir(parents=True)
+
+    older = results_dir / "eval_20261116_010000.json"
+    older.write_text(json.dumps({"timestamp": "old", "summary": {}, "results": []}), encoding="utf-8")
+
+    newer = results_dir / "eval_20261117_020000.json"
+    newer.write_text(
+        json.dumps(
+            {
+                "timestamp": "2026-11-17T02:00:00Z",
+                "queries_file": "eval/queries.json",
+                "summary": {"total_queries": 1, "auto_matches": 1},
+                "results": [
+                    {
+                        "id": "q1",
+                        "query": "First-line T2D therapy?",
+                        "expected_mode": "rag",
+                        "rationale": "Single-fact lookup",
+                        "auto_matches_expected": True,
+                        "runs": {
+                            "rag": {
+                                "requested_mode": "rag",
+                                "chosen_mode": "rag",
+                                "citation_count": 2,
+                                "citations": [{"doc_id": "d1"}],
+                                "seed_nodes": ["n1", "n2"],
+                                "traversed_edges": [{"source": "n1", "target": "n2"}],
+                                "search_queries": ["metformin T2D"],
+                                "assembled_context": "very long context string",
+                                "latency_ms": 123.4,
+                                "total_tokens": 500,
+                                "cost_usd": 0.002,
+                                "answer": "Metformin is first-line.",
+                            }
+                        },
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    try:
+        app = create_app()
+        with TestClient(app) as client:
+            resp = client.get("/v1/benchmarks")
+            assert resp.status_code == 200
+            payload = resp.json()
+            assert payload["available"] is True
+            assert payload["filename"] == "eval_20261117_020000.json"
+            assert payload["timestamp"] == "2026-11-17T02:00:00Z"
+            assert payload["queries_file"] == "eval/queries.json"
+            assert payload["summary"] == {"total_queries": 1, "auto_matches": 1}
+            assert len(payload["results"]) == 1
+
+            rag_run = payload["results"][0]["runs"]["rag"]
+            assert rag_run["seed_node_count"] == 2
+            assert rag_run["traversed_edge_count"] == 1
+            assert rag_run["citation_count"] == 2
+            assert rag_run["search_queries"] == ["metformin T2D"]
+            assert rag_run["answer"] == "Metformin is first-line."
+            assert "assembled_context" not in rag_run
+            assert "citations" not in rag_run
+    finally:
+        get_settings.cache_clear()

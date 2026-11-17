@@ -19,6 +19,10 @@
     </div>
 
     <div class="topbar-actions">
+      <nav class="view-switcher" aria-label="Primary view">
+        <button type="button" id="nav-overview-btn" class="view-switcher-btn active" aria-pressed="true">Overview</button>
+        <button type="button" id="nav-workspace-btn" class="view-switcher-btn" aria-pressed="false">Workspace</button>
+      </nav>
       <button type="button" id="api-key-btn" class="btn btn-outline btn-sm">
         <span class="status-dot" id="api-key-status-dot"></span>
         <span id="api-key-status-label">API Key</span>
@@ -27,6 +31,82 @@
     </div>
   </header>
 
+  <!-- Overview View (Default Landing Page) -->
+  <section id="overview-view" class="overview-view" aria-label="Clinical Graph Overview">
+    <div class="overview-container">
+      <div class="overview-hero-card">
+        <div class="overview-badge">Hybrid Knowledge Graph + Typed Vector Retrieval</div>
+        <h2 class="overview-headline">Strictly Grounded Clinical GraphRAG for Medical Guidelines &amp; Drug Labels</h2>
+        <p class="overview-lead">
+          Clinical Graph combines typed dense vector retrieval over guideline prose and tables with a directed clinical knowledge graph so multi-hop therapeutic questions and exact dosing lookups stay verifiably grounded. Every synthesized claim is anchored to verbatim source quotes and inspectable chunk IDs with zero reliance on unverified pretraining memory.
+        </p>
+
+        <div class="overview-features-grid">
+          <article class="overview-feature-card">
+            <div class="feature-eyebrow">STRICT NO-PRETRAINING</div>
+            <p class="feature-desc">Evidence-only synthesis with verbatim quotes anchored to <code>chunk_id</code> and <code>&lt;mark&gt;</code> highlights.</p>
+          </article>
+          <article class="overview-feature-card">
+            <div class="feature-eyebrow">HYBRID GRAPH + VECTOR</div>
+            <p class="feature-desc">Fuses <code>is_chunk</code> / <code>is_table</code> vector search with <code>is_node</code> entity seeds and <em>k</em>-hop <code>DiGraph</code> traversal via RRF.</p>
+          </article>
+          <article class="overview-feature-card">
+            <div class="feature-eyebrow">TABLE-AWARE &amp; BYOK</div>
+            <p class="feature-desc">Preserves PDF tables with LLM summaries, supports <code>.pdf</code> / <code>.md</code> / <code>.txt</code>, and accepts <code>X-OpenAI-API-Key</code> headers.</p>
+          </article>
+        </div>
+
+        <div class="overview-arch-section">
+          <div class="overview-arch-heading">4-STAGE PIPELINE ARCHITECTURE</div>
+          <div class="overview-arch-grid">
+            <div class="overview-arch-card">
+              <div class="arch-step-title">1. Parse &amp; Chunk</div>
+              <div class="arch-step-sub">PyMuPDF + Markdown + Table Summaries</div>
+            </div>
+            <div class="overview-arch-card">
+              <div class="arch-step-title">2. GraphRAG Extract</div>
+              <div class="arch-step-sub">Canonical Entities + Directed Edges + Quotes</div>
+            </div>
+            <div class="overview-arch-card">
+              <div class="arch-step-title">3. Hybrid Retrieval</div>
+              <div class="arch-step-sub">QueryRewriter + RRF + Hub-Damped Ranking</div>
+            </div>
+            <div class="overview-arch-card">
+              <div class="arch-step-title">4. Grounded Synthesis</div>
+              <div class="arch-step-sub">AnswerAgent + Verbatim Citation Anchoring</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Retrieval Benchmark & Measurements Explorer -->
+      <section class="benchmarks-section" aria-label="Retrieval Mode Benchmarks and Telemetry">
+        <div class="benchmarks-header">
+          <h2 class="benchmarks-title">Retrieval Mode Benchmarks &amp; Telemetry</h2>
+          <p class="benchmarks-subtitle">Comparing <code>rag</code>, <code>hybrid</code>, and <code>auto</code> routing across clinical diabetes queries from <code>GET /v1/benchmarks</code>.</p>
+        </div>
+
+        <div id="benchmark-summary-grid" class="benchmark-summary-grid">
+          <div class="benchmark-loading">Loading benchmark telemetry...</div>
+        </div>
+
+        <div id="benchmark-queries-list" class="benchmark-queries-list"></div>
+      </section>
+    </div>
+
+    <footer class="overview-footer-bar">
+      <div class="overview-footer-inner">
+        <span class="overview-footer-label">Interactive Workspace &mdash; <code>/v1/query</code> &amp; <code>/v1/documents</code></span>
+        <div class="overview-footer-actions">
+          <button type="button" id="overview-api-guide-btn" class="btn btn-outline btn-sm">Check Out API Implementation</button>
+          <button type="button" id="open-workspace-cta" class="btn btn-primary btn-sm">Open Graph &amp; Chat Workspace &rarr;</button>
+        </div>
+      </div>
+    </footer>
+  </section>
+
+  <!-- Workspace View -->
+  <section id="workspace-view" class="workspace-view hidden" aria-label="Graph and Chat Workspace">
   <!-- Main Workspace -->
   <main class="workspace">
     <!-- Floating Node Type Filter Legend -->
@@ -291,6 +371,7 @@
       </form>
     </aside>
   </main>
+  </section>
 
   <!-- Startup / Settings OpenAI API Key Modal -->
   <div class="modal-backdrop hidden" id="api-key-modal" role="dialog" aria-modal="true" aria-labelledby="api-key-modal-title">

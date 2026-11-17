@@ -1,5 +1,7 @@
 """Knowledge graph inspection and system status endpoints."""
 
+import json
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -9,6 +11,7 @@ from clinical_graph.graph.manager import KnowledgeManager
 
 graph_router = APIRouter(prefix="/v1/graph", tags=["graph"])
 system_router = APIRouter(prefix="/v1/system", tags=["system"])
+benchmarks_router = APIRouter(prefix="/v1/benchmarks", tags=["system"])
 
 
 @system_router.get("/status")
@@ -16,6 +19,69 @@ async def get_system_status(request: Request) -> dict[str, bool]:
     """Return runtime configuration flags needed by the web UI."""
     settings = request.app.state.settings
     return {"has_openai_api_key": bool(settings.openai_api_key)}
+
+
+def _compact_run(run: dict[str, Any]) -> dict[str, Any]:
+    """Strip bulky context and citation arrays from a single benchmark run."""
+    return {
+        "requested_mode": run.get("requested_mode"),
+        "chosen_mode": run.get("chosen_mode"),
+        "citation_count": run.get("citation_count"),
+        "seed_node_count": len(run.get("seed_nodes") or []),
+        "traversed_edge_count": len(run.get("traversed_edges") or []),
+        "search_queries": run.get("search_queries") or [],
+        "latency_ms": run.get("latency_ms"),
+        "total_tokens": run.get("total_tokens"),
+        "cost_usd": run.get("cost_usd"),
+        "answer": run.get("answer"),
+    }
+
+
+@benchmarks_router.get("")
+async def get_benchmarks() -> dict[str, Any]:
+    """Return the latest evaluation benchmark summary and compact per-query runs."""
+    results_dir = Path("eval/results")
+    if not results_dir.is_dir():
+        results_dir = Path(__file__).resolve().parents[3] / "eval" / "results"
+
+    eval_files = (
+        sorted(results_dir.glob("eval_*.json"), key=lambda p: p.name, reverse=True)
+        if results_dir.is_dir()
+        else []
+    )
+    if not eval_files:
+        return {"available": False, "summary": None, "results": []}
+
+    latest_path = eval_files[0]
+    data = json.loads(latest_path.read_text(encoding="utf-8"))
+
+    compact_results: list[dict[str, Any]] = []
+    for item in data.get("results", []):
+        raw_runs = item.get("runs") or {}
+        compact_runs = {
+            mode: _compact_run(raw_runs[mode])
+            for mode in ("rag", "hybrid", "auto")
+            if isinstance(raw_runs.get(mode), dict)
+        }
+        compact_results.append(
+            {
+                "id": item.get("id"),
+                "query": item.get("query"),
+                "expected_mode": item.get("expected_mode"),
+                "rationale": item.get("rationale"),
+                "auto_matches_expected": item.get("auto_matches_expected"),
+                "runs": compact_runs,
+            }
+        )
+
+    return {
+        "available": True,
+        "filename": latest_path.name,
+        "timestamp": data.get("timestamp"),
+        "queries_file": data.get("queries_file"),
+        "summary": data.get("summary"),
+        "results": compact_results,
+    }
 
 
 @graph_router.get("")
@@ -76,4 +142,4 @@ async def get_knowledge_graph(
     return {"nodes": nodes, "edges": edges}
 
 
-__all__ = ["graph_router", "system_router"]
+__all__ = ["benchmarks_router", "graph_router", "system_router"]
