@@ -1,0 +1,22 @@
+# secrets
+.env
+
+# Python
+.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+
+# Mac
+**/.DS_Store
+
+# Local document storage
+!data/.gitkeep
+data/*
+
+# Tests
+!test_data/.gitkeep
+test_data/*
+
+# Eval outputs
+eval/results/

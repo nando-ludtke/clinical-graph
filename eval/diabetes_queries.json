@@ -1,0 +1,50 @@
+[
+  {
+    "id": "t2d_rag_01",
+    "query": "What is the recommended HbA1c target corridor for most adults with Type 2 diabetes?",
+    "expected_mode": "rag",
+    "rationale": "Single-fact guideline lookup for a specific biomarker target range."
+  },
+  {
+    "id": "t2d_rag_02",
+    "query": "What is the initial starting dose and titration recommendation for metformin in Type 2 diabetes?",
+    "expected_mode": "rag",
+    "rationale": "Single-drug dosing lookup asking for a specific starting dose."
+  },
+  {
+    "id": "t2d_rag_03",
+    "query": "At what eGFR threshold is metformin contraindicated according to the Type 2 diabetes guideline?",
+    "expected_mode": "rag",
+    "rationale": "Single-fact threshold lookup for a specific drug contraindication."
+  },
+  {
+    "id": "t2d_rag_04",
+    "query": "What are the diagnostic criteria for hypoglycemia in patients with Type 2 diabetes?",
+    "expected_mode": "rag",
+    "rationale": "Single-concept definition and threshold lookup."
+  },
+  {
+    "id": "t2d_graph_01",
+    "query": "How does comorbid chronic kidney disease and heart failure influence the choice between SGLT2 inhibitors and GLP-1 receptor agonists in Type 2 diabetes?",
+    "expected_mode": "hybrid",
+    "rationale": "Multi-hop relational comparison across multiple comorbidities and two drug classes."
+  },
+  {
+    "id": "t2d_graph_02",
+    "query": "What is the relationship between Type 2 diabetes, diabetic nephropathy, cardiovascular disease, and treatment intensification beyond metformin?",
+    "expected_mode": "hybrid",
+    "rationale": "Multi-hop clinical pathway connecting disease complications to second-line therapy selection."
+  },
+  {
+    "id": "t2d_graph_03",
+    "query": "How do sulfonylureas and insulin compare with DPP-4 inhibitors and SGLT2 inhibitors regarding hypoglycemia risk and cardiovascular outcomes in elderly Type 2 diabetes patients?",
+    "expected_mode": "hybrid",
+    "rationale": "Cross-class relational comparison spanning four drug classes, adverse events, and target population."
+  },
+  {
+    "id": "t2d_graph_04",
+    "query": "Which microvascular complications such as diabetic retinopathy, diabetic polyneuropathy, and diabetic foot syndrome are linked to poor glycemic control, and how do they affect screening and therapy goals?",
+    "expected_mode": "hybrid",
+    "rationale": "Multi-hop synthesis across multiple microvascular complications, biomarkers, and management goals."
+  }
+]
