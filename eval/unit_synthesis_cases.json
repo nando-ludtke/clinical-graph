@@ -1,0 +1,92 @@
+[
+  {
+    "id": "synth_sufficient_local_01",
+    "query": "What is the initial starting dose and maximum daily dose of GLUCOPHAGE in adults?",
+    "expected_abstain": false,
+    "must_contain": ["500", "2550"],
+    "must_not_contain": [],
+    "chunks": [
+      {
+        "doc_id": "doc_metformin",
+        "slug": "metformin-label",
+        "chunk_id": "doc_metformin:chunk:12",
+        "text": "The usual starting dose of GLUCOPHAGE is 500 mg twice a day or 850 mg once a day, given with meals. The maximum recommended daily dose of GLUCOPHAGE is 2550 mg in adults."
+      }
+    ],
+    "web_evidence": [],
+    "rationale": "Sufficient local chunk; must report 500 mg / 2550 mg with verbatim citation."
+  },
+  {
+    "id": "synth_sufficient_web_02",
+    "query": "What is the recommended starting dose of apixaban for DVT/PE acute treatment and for how many days?",
+    "expected_abstain": false,
+    "must_contain": ["10 mg", "7 days"],
+    "must_not_contain": [],
+    "chunks": [],
+    "web_evidence": [
+      {
+        "result_id": "w1",
+        "url": "https://dailymed.nlm.nih.gov/dailymed/eliquis",
+        "title": "ELIQUIS (apixaban) Label",
+        "domain": "dailymed.nlm.nih.gov",
+        "content_type": "html",
+        "tier": "dominant",
+        "chunks": [
+          "The recommended dose of ELIQUIS for the treatment of DVT and PE is 10 mg taken orally twice daily for the first 7 days, followed by 5 mg taken orally twice daily."
+        ]
+      }
+    ],
+    "rationale": "Sufficient web evidence; must synthesize 10 mg BID for 7 days without inline [W1] tags."
+  },
+  {
+    "id": "synth_insufficient_partial_dapagliflozin_03",
+    "query": "What is the FDA-approved dosing of dapagliflozin for chronic kidney disease and at what eGFR should it not be initiated?",
+    "expected_abstain": true,
+    "must_contain": [],
+    "must_not_contain": ["25", "10 mg", "do not initiate"],
+    "chunks": [
+      {
+        "doc_id": "doc_nvl",
+        "slug": "nvl-typ-2-diabetes",
+        "chunk_id": "doc_nvl:chunk:378",
+        "text": "In der DECLARE-TIMI-58-Studie senkte Dapagliflozin das Risiko für Hospitalisierungen aufgrund von Herzinsuffizienz."
+      }
+    ],
+    "web_evidence": [],
+    "rationale": "Partial overlap trap: mentions dapagliflozin HF trial only, NOT CKD dosing or eGFR < 25 cutoff. Must abstain."
+  },
+  {
+    "id": "synth_insufficient_mismatch_amoxicillin_04",
+    "query": "What is the recommended amoxicillin-clavulanate dose for a patient with CrCl 10-30 mL/min?",
+    "expected_abstain": true,
+    "must_contain": [],
+    "must_not_contain": ["250", "500 mg every 12", "875"],
+    "chunks": [
+      {
+        "doc_id": "doc_metformin",
+        "slug": "metformin-label",
+        "chunk_id": "doc_metformin:chunk:14",
+        "text": "GLUCOPHAGE is contraindicated in patients with an eGFR below 30 mL/min/1.73 m2."
+      }
+    ],
+    "web_evidence": [],
+    "rationale": "Mismatched local context; must abstain and never leak amoxicillin renal dosing."
+  },
+  {
+    "id": "synth_insufficient_preeclampsia_05",
+    "query": "What is the loading dose and maintenance infusion rate of magnesium sulfate for seizure prophylaxis in preeclampsia?",
+    "expected_abstain": true,
+    "must_contain": [],
+    "must_not_contain": ["4 g", "6 g", "1 g/hour", "2 g/hour"],
+    "chunks": [
+      {
+        "doc_id": "doc_metformin",
+        "slug": "metformin-label",
+        "chunk_id": "doc_metformin:chunk:38",
+        "text": "Poorly controlled diabetes mellitus increases the fetal risk for major birth defects, stillbirth, and macrosomia related morbidity."
+      }
+    ],
+    "web_evidence": [],
+    "rationale": "Pregnancy mention in metformin label only; must abstain and never leak MgSO4 dosing."
+  }
+]

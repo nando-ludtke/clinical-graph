@@ -599,5 +599,23 @@ def test_knowledge_graph_self_loop_rejection_and_max_weight_merging() -> None:
     assert e3.weight == 9.0
 
 
+def test_traverse_k_hops_records_hop_distance() -> None:
+    from clinical_graph.graph.knowledge_graph import ClinicalKnowledgeGraph
+
+    graph = ClinicalKnowledgeGraph()
+    graph.upsert_node("n1", "Seed", "drug", doc_id="doc_1")
+    graph.upsert_node("n2", "Hop One", "condition", doc_id="doc_1")
+    graph.upsert_node("n3", "Hop Two", "outcome", doc_id="doc_1")
+
+    graph.upsert_edge("n1", "n2", "TREATS", doc_id="doc_1", excerpt="n1 treats n2.")
+    graph.upsert_edge("n2", "n3", "CAUSES", doc_id="doc_1", excerpt="n2 causes n3.")
+
+    edges, _ = graph.traverse_k_hops(["n1"], k_hops=2)
+    by_pair = {(e["source"], e["target"]): e for e in edges}
+    assert by_pair[("n1", "n2")]["hop"] == 1
+    assert by_pair[("n2", "n3")]["hop"] == 2
+
+
+
 
 

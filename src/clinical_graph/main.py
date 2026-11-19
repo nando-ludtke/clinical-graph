@@ -1,8 +1,10 @@
 """FastAPI application entrypoint for clinical-graph."""
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import uvicorn
@@ -26,9 +28,38 @@ from clinical_graph.graph import (
     LocalVectorStore,
 )
 from clinical_graph.llm import LiteLLMClient
+from clinical_graph.pipelines.ingestion import IngestionPipeline
 from clinical_graph.pipelines.jobs import JobStore
 
 logger = logging.getLogger(__name__)
+
+
+async def prune_expired_non_frozen_documents(
+    manager: KnowledgeManager,
+    max_age_hours: int,
+) -> int:
+    """Delete non-frozen documents older than ``max_age_hours`` and return deleted count."""
+    if max_age_hours <= 0:
+        return 0
+    cutoff = datetime.now(UTC) - timedelta(hours=max_age_hours)
+    pipeline = IngestionPipeline(manager=manager)
+    deleted = 0
+    for doc in manager.db.filter_documents():
+        if doc.metadata.is_frozen:
+            continue
+        created_at = doc.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=UTC)
+        if created_at <= cutoff:
+            await pipeline.delete_document(doc.doc_id)
+            deleted += 1
+    if deleted > 0:
+        logger.info(
+            "Auto-pruned %d non-frozen document(s) older than %d hour(s)",
+            deleted,
+            max_age_hours,
+        )
+    return deleted
 
 
 @asynccontextmanager
@@ -77,7 +108,30 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         settings.app_version,
         settings.environment,
     )
+    prune_task: asyncio.Task[None] | None = None
+    if settings.auto_prune_non_frozen_hours > 0:
+
+        async def _auto_prune_loop() -> None:
+            while True:
+                try:
+                    await prune_expired_non_frozen_documents(
+                        app.state.knowledge_manager,
+                        settings.auto_prune_non_frozen_hours,
+                    )
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    logger.exception("Auto-prune of expired non-frozen documents failed")
+                await asyncio.sleep(3600)
+
+        prune_task = asyncio.create_task(_auto_prune_loop())
+
     yield
+
+    if prune_task is not None:
+        prune_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await prune_task
     app.state.knowledge_manager.save()
     logger.info("Shutting down %s", settings.app_name)
 

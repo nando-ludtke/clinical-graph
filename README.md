@@ -5,17 +5,17 @@ A FastAPI microservice for hybrid knowledge-graph and vector-backed clinical ret
 ## Core Features (Implemented)
 
 - **Document Parsing & Sub-Chunking**: Parses `.pdf` (PyMuPDF `fitz` text + `ParsedTable` with surrounding page context), `.md`, and `.txt`; strips references/boilerplate; splits text into `~1,300`-char `is_chunk` retrieval chunks grouped into `~5,000`-char extraction windows; summarizes tables via `table_summary.yml`.
-- **Single-Pass GraphRAG Extraction**: `GraphExtractor` (`graph_extraction.yml`) extracts canonical clinical entities and directed relations (`relationship_description`, `relationship_strength`, verbatim `quote`, `chunk_id` mapping), rejects self-loops, and merges parallel edges with `max(weight)`.
-- **Typed Vector Store & Knowledge Graph**: `NetworkX DiGraph` + typed `LocalVectorStore` (`is_node`, `is_chunk`, `is_table`), SQLite `DocumentDatabase`, and tight cross-store deletion (`delete_by_doc_id` + graph provenance pruning).
-- **Hybrid Retrieval (`rag` / `hybrid` / `auto`)**: `QueryRewriter` (`v3`) expands queries and routes `auto` requests; fuses `is_chunk`/`is_table` vector search with `is_node` seed lookup + $k$-hop `DiGraph` traversal using Reciprocal Rank Fusion (RRF) and IDF-BM25 + bridge-bonus + hub-damped edge ranking.
-- **Grounded Answer Synthesis & Highlighted Citations**: `AnswerAgent` (`v3`) enforces a strict no-pretraining rule, returning `SynthesizedAnswer` + `CitationQuote(ref_id, quote)` resolved into `CitationPassage` with `chunk_id` and `<mark>` highlights.
-- **Optional Classification & Telemetry**: `DocumentClassifier` (`classify=true`) for PII/PHI regex screening and `DocType` allowlist validation; step-level latency, token usage, and cost telemetry (`PipelineMetrics`).
+- **Single-Pass GraphRAG Extraction**: `GraphExtractor` (`graph_extraction.yml`) wraps extraction windows in `<source_data>` delimiters, extracts canonical clinical entities and directed relations (`relationship_description`, `relationship_strength`, verbatim `quote`, `chunk_id` mapping), rejects self-loops, and merges parallel edges with `max(weight)`.
+- **Typed Vector Store, Knowledge Graph & Showcase Lifecycle**: `NetworkX DiGraph` + typed `LocalVectorStore` (`is_node`, `is_chunk`, `is_table`), SQLite `DocumentDatabase`, tight cross-store deletion (`delete_by_doc_id` + graph provenance pruning), frozen showcase documents (`is_frozen`), and `AUTO_PRUNE_NON_FROZEN_HOURS` (24h showcase auto-cleanup of non-frozen uploads).
+- **Hybrid Retrieval (`rag` / `hybrid` / `auto`)**: `QueryRewriter` (`v4`) expands queries, routes `auto` requests, and applies `is_medical` query gating; embeds rewritten `search_queries` in a single batch (`embed_queries`) reused across `is_chunk`, `is_table`, and `is_node` searches; fuses `is_chunk`/`is_table` RRF results with $k$-hop `DiGraph` traversal using hop-decayed IDF-BM25 + bridge-bonus + hub-damped edge ranking and elastic two-channel chunk assembly (`chunk_sources`: `rag`, `graph`, `both`).
+- **Grounded Answer Synthesis & Highlighted Citations**: `AnswerAgent` (`v4`) wraps context passages in `<source_data>` delimiters and enforces a strict no-pretraining rule, returning `SynthesizedAnswer` + `CitationQuote(ref_id, quote)` resolved into `CitationPassage` with `chunk_id` and `<mark>` highlights.
+- **`clinical-guard` Prompt-Injection Screening**: `ClinicalGuardClient` (`guardrails/`) screens queries and document uploads regex-first (`scan_text_for_injection`) and `clinical-guard` second (`POST /v1/guard/prompt`), with `GET /health` periodic polling, `X-Forwarded-For` forwarding, `Semaphore(2)` concurrent window scanning, and `429`/`503` `Retry-After` backoff.
+- **Classification, Telemetry, Benchmarks & Web UI**: `DocumentClassifier` (`classify=true`) for PII/PHI regex screening and `DocType` allowlist validation; step-level latency, token usage, and cost telemetry (`PipelineMetrics`); `GET /v1/benchmarks` telemetry endpoint; and a 2-view (`Overview` + `Workspace`) static frontend.
+- **Verified Internet Search (`search/`)**: 1-shot Tavily allowlisted web fallback (`enable_web_fallback`, with explicit UI confirmation modal) triggered via `node_label` similarity or OpenAI Decisions (`gpt-6-luna`), with temporary vector-chunk RAG and `< 1 ms` local regex + `<source_data>` delimiting (see [docs/web_search.md](docs/web_search.md)).
 
 ## Planned (Phase 2)
 
-- **`clinical-guard` Middleware (Gates 1–3)**: Document ingestion screening, query entry screening, and search query formatting (`enable_guardrails`).
-- **Verified Internet Search + Source Auditor**: External fallback retrieval with source credibility auditing (`enable_web_fallback`).
-- **Independent Audit Agent**: Secondary verification pass over generated answers (`enable_audit_agent`).
+- **Independent Audit Agent**: Secondary verification pass over generated answers.
 
 ## Quickstart
 
@@ -32,6 +32,12 @@ cp .env.example .env
 
 ```bash
 uvicorn clinical_graph.main:app --reload
+```
+
+Or run via Docker Compose:
+
+```bash
+docker compose up --build
 ```
 
 ### Run Live E2E Script & Retrieval Evaluation

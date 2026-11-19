@@ -154,6 +154,7 @@ class LiteLLMClient:
         temperature: float = 0.0,
         response_format: type[BaseModel] | None = None,
         api_key: str | None = None,
+        reasoning_effort: str | None = None,
     ) -> tuple[str, LLMUsage]:
         """Execute a chat completion via LiteLLM and return ``(text, LLMUsage)``."""
         kwargs: dict[str, Any] = {
@@ -166,6 +167,8 @@ class LiteLLMClient:
             kwargs["response_format"] = response_format
         if api_key is not None:
             kwargs["api_key"] = api_key
+        if reasoning_effort is not None:
+            kwargs["reasoning_effort"] = reasoning_effort
 
         semaphore = self._get_semaphore()
         response: Any = None
@@ -233,6 +236,7 @@ async def complete_with_usage_compat(
     temperature: float = 0.0,
     response_format: type[BaseModel] | None = None,
     api_key: str | None = None,
+    reasoning_effort: str | None = None,
 ) -> tuple[str, LLMUsage]:
     """Call ``complete_with_usage`` when available, falling back to ``complete`` for legacy mocks."""
     call_kwargs: dict[str, Any] = {
@@ -243,6 +247,8 @@ async def complete_with_usage_compat(
     }
     if response_format is not None:
         call_kwargs["response_format"] = response_format
+    if reasoning_effort is not None:
+        call_kwargs["reasoning_effort"] = reasoning_effort
 
     if isinstance(llm_client, NonCallableMock):
         method = getattr(llm_client, "complete_with_usage", None)

@@ -1,0 +1,109 @@
+{
+  "passed": 4,
+  "total": 4,
+  "results": [
+    {
+      "id": "ret_rag_01",
+      "query": "When should metformin be discontinued before iodinated contrast imaging procedures?",
+      "requested_mode": "rag",
+      "chosen_mode": "rag",
+      "passed": true,
+      "matched_terms": [
+        "contrast",
+        "eGFR",
+        "metformin"
+      ],
+      "seed_nodes": [],
+      "edge_count": 0,
+      "stage_latencies_ms": {
+        "guard": 400.806,
+        "filter_documents": 6.847,
+        "query_rewrite": 2834.156,
+        "rag_retrieval": 131.552,
+        "answer_synthesis": 0.02,
+        "total": 3710.162
+      },
+      "latency_ms": 3710.48
+    },
+    {
+      "id": "ret_rag_02",
+      "query": "What is the recommended HbA1c target corridor for adults with Type 2 diabetes?",
+      "requested_mode": "rag",
+      "chosen_mode": "rag",
+      "passed": true,
+      "matched_terms": [
+        "HbA1c",
+        "6,5"
+      ],
+      "seed_nodes": [],
+      "edge_count": 0,
+      "stage_latencies_ms": {
+        "guard": 279.453,
+        "filter_documents": 3.567,
+        "query_rewrite": 1620.806,
+        "rag_retrieval": 13.897,
+        "answer_synthesis": 0.016,
+        "total": 2174.689
+      },
+      "latency_ms": 2175.01
+    },
+    {
+      "id": "ret_hybrid_01",
+      "query": "Which gastrointestinal and biliary adverse effects were reported with liraglutide in Type 2 diabetes?",
+      "requested_mode": "hybrid",
+      "chosen_mode": "hybrid",
+      "passed": true,
+      "matched_terms": [
+        "Liraglutid",
+        "Gallenstein"
+      ],
+      "seed_nodes": [
+        "condition-type-2-diabetes",
+        "doc_5bb6462e4809",
+        "doc_c20d48fc4f58",
+        "drug-liraglutide",
+        "doc_c20d48fc4f58:table:31"
+      ],
+      "edge_count": 13,
+      "stage_latencies_ms": {
+        "guard": 263.665,
+        "filter_documents": 6.74,
+        "query_rewrite": 1495.41,
+        "seed_search": 47.481,
+        "k_hop_traversal": 11.568,
+        "answer_synthesis": 0.015,
+        "total": 2074.493
+      },
+      "latency_ms": 2074.89
+    },
+    {
+      "id": "ret_hybrid_02",
+      "query": "How does poorly controlled diabetes during pregnancy affect fetal and maternal risks?",
+      "requested_mode": "hybrid",
+      "chosen_mode": "hybrid",
+      "passed": true,
+      "matched_terms": [
+        "macrosomia",
+        "pregnancy"
+      ],
+      "seed_nodes": [
+        "condition-gestationsdiabetes",
+        "condition-diabetes-complications",
+        "doc_5bb6462e4809:chunk:39",
+        "doc_5bb6462e4809:chunk:38",
+        "doc_c20d48fc4f58:table:14"
+      ],
+      "edge_count": 1,
+      "stage_latencies_ms": {
+        "guard": 236.999,
+        "filter_documents": 6.603,
+        "query_rewrite": 2373.274,
+        "seed_search": 48.588,
+        "k_hop_traversal": 3.246,
+        "answer_synthesis": 0.015,
+        "total": 2930.674
+      },
+      "latency_ms": 2931.02
+    }
+  ]
+}

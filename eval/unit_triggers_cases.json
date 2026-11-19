@@ -1,0 +1,44 @@
+[
+  {
+    "id": "trig_local_01",
+    "query": "What is the recommended starting dose and maximum daily dose of metformin in adults with Type 2 diabetes?",
+    "expected_trigger": false,
+    "expected_path": "none",
+    "rationale": "Explicitly covered in local metformin label (500 mg BID or 850 mg QD, max 2000-2550 mg)."
+  },
+  {
+    "id": "trig_local_02",
+    "query": "What HbA1c target range is recommended for most adults with Type 2 diabetes?",
+    "expected_trigger": false,
+    "expected_path": "none",
+    "rationale": "Core T2D guideline target corridor covered in NVL Typ-2-Diabetes."
+  },
+  {
+    "id": "trig_decision_01",
+    "query": "What is the exact FDA-approved pediatric dosing of liraglutide (Victoza) for Type 2 diabetes in patients aged 10 years and older?",
+    "expected_trigger": true,
+    "expected_path": "decision_model",
+    "rationale": "Liraglutide and Type 2 diabetes are in label_vectors.npz, so Trigger 1 passes and Trigger 2 (gpt-6-luna) detects missing pediatric dosing."
+  },
+  {
+    "id": "trig_decision_02",
+    "query": "What is the FDA-approved heart failure dosing of empagliflozin and its exact eGFR cutoff for initiation in heart failure?",
+    "expected_trigger": true,
+    "expected_path": "decision_model",
+    "rationale": "Empagliflozin and heart failure exist in label_vectors.npz, but FDA HF label dosing/cutoff is absent."
+  },
+  {
+    "id": "trig_label_01",
+    "query": "What are the CrCl-based dosing adjustments for amoxicillin-clavulanate in severe renal impairment?",
+    "expected_trigger": true,
+    "expected_path": "label_mismatch",
+    "rationale": "Amoxicillin-clavulanate is absent from label_vectors.npz, firing Trigger 1."
+  },
+  {
+    "id": "trig_label_02",
+    "query": "What is the first-line pharmacologic treatment and target blood pressure for preeclampsia with severe features?",
+    "expected_trigger": true,
+    "expected_path": "label_mismatch",
+    "rationale": "Preeclampsia is out of corpus, firing Trigger 1."
+  }
+]

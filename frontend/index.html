@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>clinical-graph — Clinical Knowledge Graph &amp; Hybrid RAG</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Clinical Graph — Clinical Knowledge Graph &amp; Hybrid RAG</title>
+  <link rel="stylesheet" href="styles.css?v=2" />
   <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
 </head>
 <body>
@@ -16,6 +16,11 @@
         <h1 class="brand-title">Clinical Graph</h1>
         <span class="brand-subtitle">Hybrid GraphRAG &amp; Evidence Grounding</span>
       </div>
+    </div>
+
+    <div class="guard-status-pill" id="guard-status-pill" title="Prompt Guard status (localhost:8080)">
+      <span class="status-dot" id="guard-status-dot"></span>
+      <span id="guard-status-label">Prompt Guard: Checking...</span>
     </div>
 
     <div class="topbar-actions">
@@ -51,29 +56,29 @@
             <p class="feature-desc">Fuses <code>is_chunk</code> / <code>is_table</code> vector search with <code>is_node</code> entity seeds and <em>k</em>-hop <code>DiGraph</code> traversal via RRF.</p>
           </article>
           <article class="overview-feature-card">
-            <div class="feature-eyebrow">TABLE-AWARE &amp; BYOK</div>
-            <p class="feature-desc">Preserves PDF tables with LLM summaries, supports <code>.pdf</code> / <code>.md</code> / <code>.txt</code>, and accepts <code>X-OpenAI-API-Key</code> headers.</p>
+            <div class="feature-eyebrow">VERIFIED WEB FALLBACK</div>
+            <p class="feature-desc">1-shot allowlisted Tavily search via <code>label_vectors.npz</code> &amp; <code>gpt-6-luna</code> Decisions with temporary vector-chunk RAG.</p>
           </article>
         </div>
 
         <div class="overview-arch-section">
-          <div class="overview-arch-heading">4-STAGE PIPELINE ARCHITECTURE</div>
+          <div class="overview-arch-heading">5-STAGE PIPELINE ARCHITECTURE</div>
           <div class="overview-arch-grid">
             <div class="overview-arch-card">
-              <div class="arch-step-title">1. Parse &amp; Chunk</div>
-              <div class="arch-step-sub">PyMuPDF + Markdown + Table Summaries</div>
+              <div class="arch-step-title">1. Guard &amp; Rewrite</div>
+              <div class="arch-step-sub">Prompt Guard + QueryRewriter v4</div>
             </div>
             <div class="overview-arch-card">
-              <div class="arch-step-title">2. GraphRAG Extract</div>
-              <div class="arch-step-sub">Canonical Entities + Directed Edges + Quotes</div>
+              <div class="arch-step-title">2. Hybrid Retrieval</div>
+              <div class="arch-step-sub">Typed Vectors + k-Hop Graph RRF</div>
             </div>
             <div class="overview-arch-card">
-              <div class="arch-step-title">3. Hybrid Retrieval</div>
-              <div class="arch-step-sub">QueryRewriter + RRF + Hub-Damped Ranking</div>
+              <div class="arch-step-title">3. Web Fallback</div>
+              <div class="arch-step-sub">gpt-6-luna + Allowlisted Vector RAG</div>
             </div>
             <div class="overview-arch-card">
               <div class="arch-step-title">4. Grounded Synthesis</div>
-              <div class="arch-step-sub">AnswerAgent + Verbatim Citation Anchoring</div>
+              <div class="arch-step-sub">AnswerAgent v4 + Verbatim Citations</div>
             </div>
           </div>
         </div>
@@ -82,9 +87,11 @@
       <!-- Retrieval Benchmark & Measurements Explorer -->
       <section class="benchmarks-section" aria-label="Retrieval Mode Benchmarks and Telemetry">
         <div class="benchmarks-header">
-          <h2 class="benchmarks-title">Retrieval Mode Benchmarks &amp; Telemetry</h2>
-          <p class="benchmarks-subtitle">Comparing <code>rag</code>, <code>hybrid</code>, and <code>auto</code> routing across clinical diabetes queries from <code>GET /v1/benchmarks</code>.</p>
+          <h2 class="benchmarks-title">Unit &amp; End-to-End Evaluation Telemetry</h2>
+          <p class="benchmarks-subtitle">Latest isolated stage evaluations and E2E query routing metrics served from <code>GET /v1/benchmarks</code>.</p>
         </div>
+
+        <div id="unit-evals-grid" class="benchmark-summary-grid hidden"></div>
 
         <div id="benchmark-summary-grid" class="benchmark-summary-grid">
           <div class="benchmark-loading">Loading benchmark telemetry...</div>
@@ -142,8 +149,8 @@
         </div>
       </div>
 
-      <div class="doc-showcase-note" role="note">
-        The German diabetes guideline and Metformin Label are frozen and cannot be removed for showcase purposes.
+      <div class="doc-showcase-note" id="doc-showcase-note" role="note">
+        The German diabetes guideline and Metformin Label are frozen and cannot be removed for showcase purposes. Newly uploaded documents are automatically removed after 24 hours.
       </div>
 
       <div class="doc-list-container" id="doc-list" role="list">
@@ -287,7 +294,26 @@
             </div>
           </div>
 
-          <!-- Step 4: Synthesis -->
+          <!-- Step 4: Web Search -->
+          <div class="pipeline-stage disabled" id="stage-web-search">
+            <div class="stage-header">
+              <span class="stage-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="10" cy="10" r="7" />
+                  <path d="M3 10h14M10 3a11 11 0 0 1 0 14M10 3a11 11 0 0 0 0 14" />
+                </svg>
+              </span>
+              <span class="stage-label">Web Search</span>
+              <span class="stage-check" aria-hidden="true">&#10003;</span>
+            </div>
+            <div class="stage-body">
+              <div class="evidence-stack" id="web-evidence-stack">
+                <span class="evidence-empty">Disabled</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 5: Synthesis -->
           <div class="pipeline-stage" id="stage-synthesis">
             <div class="stage-header">
               <span class="stage-icon" aria-hidden="true">
@@ -301,6 +327,26 @@
             <div class="stage-body">
               <div class="synth-status-pill" id="synth-status-pill">
                 <span class="synth-idle-text">Waiting</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 6: Latency -->
+          <div class="pipeline-stage hidden" id="stage-latency">
+            <div class="stage-header">
+              <span class="stage-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="10" cy="10" r="7" />
+                  <path d="M10 6v4l2.5 2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              <span class="stage-label">Total Latency</span>
+              <span class="stage-check" aria-hidden="true">&#10003;</span>
+            </div>
+            <div class="stage-body">
+              <div class="pipeline-latency" id="pipeline-latency" tabindex="0" aria-label="Pipeline latency breakdown">
+                <span class="pipeline-latency-value" id="pipeline-latency-value"></span>
+                <div class="pipeline-latency-tooltip" id="pipeline-latency-tooltip" role="tooltip"></div>
               </div>
             </div>
           </div>
@@ -352,12 +398,19 @@
       <!-- Query Input Form -->
       <form class="chat-input-form" id="chat-form">
         <div class="chat-controls-row">
-          <label for="retrieval-mode-select" class="mode-label">Mode:</label>
-          <select id="retrieval-mode-select" class="mode-select">
-            <option value="auto" selected>auto</option>
-            <option value="rag">rag</option>
-            <option value="hybrid">hybrid</option>
-          </select>
+          <div class="retrieval-mode-pills" id="retrieval-mode-group" role="radiogroup" aria-label="Retrieval mode">
+            <button type="button" class="mode-pill active" data-mode="auto" aria-pressed="true"><span class="mode-pill-dot" aria-hidden="true"></span>Auto</button>
+            <button type="button" class="mode-pill" data-mode="hybrid" aria-pressed="false"><span class="mode-pill-dot" aria-hidden="true"></span>Hybrid</button>
+            <button type="button" class="mode-pill" data-mode="rag" aria-pressed="false"><span class="mode-pill-dot" aria-hidden="true"></span>RAG</button>
+          </div>
+          <label class="web-search-switch" id="web-search-switch" title="Enable web fallback on allowlisted medical websites">
+            <input type="checkbox" id="web-search-toggle" />
+            <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+            <span class="switch-label">Web Search</span>
+          </label>
+        </div>
+        <div class="chat-guard-note hidden" id="chat-guard-note" role="status">
+          Inputs are not verified (Prompt Guard offline)
         </div>
         <div class="chat-input-row">
           <textarea
@@ -396,6 +449,26 @@
     </div>
   </div>
 
+  <!-- Web Search Confirmation Modal -->
+  <div class="modal-backdrop hidden" id="web-search-modal" role="dialog" aria-modal="true" aria-labelledby="web-search-modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="web-search-modal-title">Enable External Web Search?</h3>
+        <button type="button" id="close-web-search-modal-btn" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+      <p class="modal-desc">
+        Web Search queries allowlisted external medical websites (e.g., NIH, NHS, CDC, NICE, WHO, EMA) when local knowledge graph coverage is insufficient. Retrieved passages are screened locally with deterministic pattern checks and wrapped in <code>&lt;source_data&gt;</code> delimiters, but are <strong>not</strong> scanned by the ML <code>clinical-guard</code> model.
+      </p>
+      <p class="modal-desc">
+        Only enable this if you accept retrieving external web content into the answer synthesis context.
+      </p>
+      <div class="modal-actions">
+        <button type="button" id="cancel-web-search-btn" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="confirm-web-search-btn" class="btn btn-primary">Enable Web Search</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Upload Document Modal -->
   <div class="modal-backdrop hidden" id="upload-modal" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
     <div class="modal-card">
@@ -409,8 +482,8 @@
           <input type="file" id="upload-file" accept=".pdf,.txt,.md" required />
         </div>
         <div class="form-group">
-          <label for="upload-title">Title (optional)</label>
-          <input type="text" id="upload-title" placeholder="Defaults to filename" />
+          <label for="upload-title">Title</label>
+          <input type="text" id="upload-title" placeholder="e.g. ESC Diabetes Guideline 2023" required />
         </div>
         <div class="form-group">
           <label for="upload-restriction">Local Restriction</label>
@@ -476,6 +549,23 @@
       <p id="notice-modal-message" class="notice-message"></p>
       <div class="modal-actions">
         <button type="button" id="ok-notice-modal-btn" class="btn btn-primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guard Unreachable Upload Confirmation Modal -->
+  <div class="modal-backdrop hidden" id="guard-upload-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="guard-upload-confirm-title">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <h3 id="guard-upload-confirm-title">Prompt Guard Unreachable</h3>
+        <button type="button" id="close-guard-upload-modal-btn" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+      <p class="modal-desc guard-confirm-desc">
+        Prompt Guard (<code>clinical-guard</code>) is unreachable. Uploaded documents will not be verified by the prompt-injection model (web search is also disabled). Do you want to continue uploading?
+      </p>
+      <div class="modal-actions">
+        <button type="button" id="cancel-guard-upload-btn" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="confirm-guard-upload-btn" class="btn btn-danger">Continue Upload</button>
       </div>
     </div>
   </div>

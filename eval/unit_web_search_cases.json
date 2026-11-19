@@ -1,0 +1,44 @@
+[
+  {
+    "id": "web_warfarin_01",
+    "query": "What is the target INR range for warfarin in non-valvular atrial fibrillation vs. mechanical mitral valve replacement according to NHS or NIH guidelines?",
+    "expected_mode": "rag",
+    "expected_web_fallback": true,
+    "rationale": "Held-out anticoagulation target INR lookup (NHS/NIH/PMC)."
+  },
+  {
+    "id": "web_amoxclav_02",
+    "query": "What are the renal dosing adjustments for amoxicillin-clavulanate in patients with creatinine clearance below 30 mL/min?",
+    "expected_mode": "rag",
+    "expected_web_fallback": true,
+    "rationale": "Held-out antibiotic renal dosing label lookup (DailyMed/PMC)."
+  },
+  {
+    "id": "web_preeclampsia_03",
+    "query": "What is the NICE or ACOG recommended magnesium sulfate loading and maintenance regimen for severe preeclampsia?",
+    "expected_mode": "hybrid",
+    "expected_web_fallback": true,
+    "rationale": "Held-out obstetrics emergency guideline lookup (NICE/PMC/WHO)."
+  },
+  {
+    "id": "web_liraglutide_ped_04",
+    "query": "What is the FDA-approved pediatric dosing and titration schedule for liraglutide (Victoza) in Type 2 diabetes?",
+    "expected_mode": "rag",
+    "expected_web_fallback": true,
+    "rationale": "Held-out diabetes pediatric drug label lookup (DailyMed/FDA)."
+  },
+  {
+    "id": "web_anaphylaxis_05",
+    "query": "What is the recommended intramuscular epinephrine dose for adult vs. pediatric anaphylaxis according to NHS or CDC?",
+    "expected_mode": "rag",
+    "expected_web_fallback": true,
+    "rationale": "Held-out emergency medicine dosing lookup (NHS/CDC/PMC)."
+  },
+  {
+    "id": "web_ckd_sglt2_06",
+    "query": "According to NICE guidelines, when should SGLT2 inhibitors be offered to adults with chronic kidney disease and albuminuria?",
+    "expected_mode": "hybrid",
+    "expected_web_fallback": true,
+    "rationale": "Held-out UK NICE CKD guideline lookup."
+  }
+]

@@ -16,14 +16,13 @@ from clinical_graph.schemas.query import (
     CitationPassage,
     QueryRequest,
     QueryResponse,
-    ResolvedRetrievalMode,
     RetrievalTrace,
 )
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 _SENTENCE_SPLIT_RE = re.compile(r"(?:[^\n.!?]|(?<=\d)\.(?=\d))+(?:[.!?]+|$)")
 _CHUNK_ID_ORDER_RE = re.compile(r":(chunk|table):(\d+)$")
-_INLINE_REF_TAG_RE = re.compile(r"\[(?:[CTE]\d+)(?:\s*[,;]\s*[CTE]\d+)*\]")
+_INLINE_REF_TAG_RE = re.compile(r"\[(?:[CTEW]\d+)(?:\s*[,;]\s*[CTEW]\d+)*\]")
 _SPACE_BEFORE_PUNCT_RE = re.compile(r"[ \t]+([,.;:!?])")
 _INLINE_MULTI_SPACE_RE = re.compile(r"(?<=\S)[ \t]{2,}")
 
@@ -59,6 +58,75 @@ def _tokenize(text: str) -> list[str]:
     return _TOKEN_RE.findall(text.lower())
 
 
+def _normalize_for_quote_matching(text: str) -> tuple[str, list[int]]:
+    """Normalize markdown, bullet, table-pipe, and soft-hyphen noise while tracking original offsets."""
+    norm_chars: list[str] = []
+    orig_offsets: list[int] = []
+    i = 0
+    n = len(text)
+    at_line_start = True
+
+    while i < n:
+        ch = text[i]
+
+        # Soft hyphenation across line breaks: "-\n" + optional horizontal whitespace
+        if text[i : i + 2] == "-\n":
+            i += 2
+            while i < n and text[i] in " \t":
+                i += 1
+            at_line_start = False
+            continue
+
+        # Markdown emphasis markers: **, __, `
+        if text[i : i + 2] in ("**", "__"):
+            i += 2
+            at_line_start = False
+            continue
+        if ch == "`":
+            i += 1
+            at_line_start = False
+            continue
+
+        # Heading prefix at line start (or after leading horizontal whitespace): #+ <space>
+        if at_line_start and ch == "#":
+            j = i
+            while j < n and text[j] == "#":
+                j += 1
+            if j < n and text[j] in " \t":
+                i = j + 1
+                at_line_start = False
+                continue
+
+        # Bullet prefix at line start or preceded by whitespace: "- ", "* ", "• ", "\uf0a7 "
+        if (
+            ch in ("-", "*", "•", "\uf0a7")
+            and (at_line_start or text[i - 1].isspace())
+            and i + 1 < n
+            and text[i + 1] in " \t"
+        ):
+            i += 2
+            at_line_start = False
+            continue
+
+        # Markdown table pipe: replace with space so adjacent cells stay token-separated
+        if ch == "|":
+            norm_chars.append(" ")
+            orig_offsets.append(i)
+            i += 1
+            at_line_start = False
+            continue
+
+        norm_chars.append(ch)
+        orig_offsets.append(i)
+        if ch == "\n":
+            at_line_start = True
+        elif ch not in " \t":
+            at_line_start = False
+        i += 1
+
+    return "".join(norm_chars), orig_offsets
+
+
 def _highlight_quote_in_text(
     source_text: str,
     quote: str,
@@ -71,38 +139,21 @@ def _highlight_quote_in_text(
     if not cleaned_quote:
         return source_text, None, None
 
-    pattern = re.compile(
-        r"(?:-\s+|\s+)".join(re.escape(tok) for tok in cleaned_quote.split()),
-        re.IGNORECASE,
-    )
-    match = pattern.search(source_text)
-    if match is not None:
-        start, end = match.start(), match.end()
-        highlighted = f"{source_text[:start]}<mark>{source_text[start:end]}</mark>{source_text[end:]}"
-        return highlighted, start, end
-
-    if "-\n" in source_text:
-        norm_chars: list[str] = []
-        orig_offsets: list[int] = []
-        i = 0
-        n = len(source_text)
-        while i < n:
-            if source_text[i : i + 2] == "-\n":
-                i += 2
-                while i < n and source_text[i] in " \t":
-                    i += 1
-                continue
-            norm_chars.append(source_text[i])
-            orig_offsets.append(i)
-            i += 1
-        norm_text = "".join(norm_chars)
+    norm_text, orig_offsets = _normalize_for_quote_matching(source_text)
+    norm_quote, _ = _normalize_for_quote_matching(quote)
+    norm_quote_tokens = norm_quote.split()
+    if norm_quote_tokens:
+        pattern = re.compile(
+            r"\s+".join(re.escape(tok) for tok in norm_quote_tokens),
+            re.IGNORECASE,
+        )
         match = pattern.search(norm_text)
         if match is not None and match.start() < len(orig_offsets):
             start = orig_offsets[match.start()]
             end = (
                 orig_offsets[match.end() - 1] + 1
                 if match.end() > 0 and match.end() - 1 < len(orig_offsets)
-                else n
+                else len(source_text)
             )
             highlighted = (
                 f"{source_text[:start]}<mark>{source_text[start:end]}</mark>{source_text[end:]}"
@@ -186,6 +237,7 @@ class SynthesizedAnswer(BaseModel):
 
     answer: str
     citations: list[CitationQuote] = Field(default_factory=list)
+    web_citations: list[CitationQuote] = Field(default_factory=list)
 
 
 class AnswerAgent:
@@ -218,6 +270,7 @@ class AnswerAgent:
         retrieved_chunks: list[dict[str, str]] | None = None,
         retrieved_tables: list[dict[str, str]] | None = None,
         chunk_lookup: dict[str, str] | None = None,
+        web_evidence: list[Any] | None = None,
     ) -> str:
         """Build the exact context text passed to the answer synthesis LLM."""
         return "\n\n".join(
@@ -231,6 +284,7 @@ class AnswerAgent:
                 retrieved_chunks=retrieved_chunks,
                 retrieved_tables=retrieved_tables,
                 chunk_lookup=chunk_lookup,
+                web_evidence=web_evidence,
             )
         )
 
@@ -296,6 +350,7 @@ class AnswerAgent:
         retrieved_chunks: list[dict[str, str]] | None = None,
         retrieved_tables: list[dict[str, str]] | None = None,
         chunk_lookup: dict[str, str] | None = None,
+        web_evidence: list[Any] | None = None,
     ) -> tuple[QueryResponse, LLMUsage]:
         """Produce a grounded ``QueryResponse`` and ``LLMUsage`` using ``LiteLLMClient``."""
         has_context = bool(
@@ -305,6 +360,7 @@ class AnswerAgent:
             or retrieved_chunks
             or retrieved_tables
             or expanded_passages
+            or web_evidence
         )
         if self.llm_client is None or not has_context:
             return (
@@ -335,6 +391,7 @@ class AnswerAgent:
             retrieved_chunks=retrieved_chunks,
             retrieved_tables=retrieved_tables,
             chunk_lookup=chunk_lookup,
+            web_evidence=web_evidence,
         )
         raw_answer, usage = await complete_with_usage_compat(
             self.llm_client,
@@ -358,6 +415,10 @@ class AnswerAgent:
             default_citations=citations,
             documents=documents,
         )
+        resolved_web_sources = self._rebuild_web_sources(
+            synthesized_web_citations=synthesized.web_citations,
+            web_evidence=web_evidence,
+        )
         clean_answer = _strip_inline_ref_tags(synthesized.answer)
         return (
             QueryResponse(
@@ -365,7 +426,8 @@ class AnswerAgent:
                 answer=clean_answer,
                 chosen_mode=chosen_mode,
                 citations=resolved_citations,
-                used_web_fallback=False,
+                web_sources=resolved_web_sources,
+                used_web_fallback=bool(resolved_web_sources),
                 audit_passed=None,
                 trace=trace,
             ),
@@ -424,6 +486,65 @@ class AnswerAgent:
             audit_passed=None,
             trace=trace,
         )
+
+    @staticmethod
+    def _rebuild_web_sources(
+        *,
+        synthesized_web_citations: list[CitationQuote],
+        web_evidence: list[Any] | None,
+    ) -> list[Any]:
+        """Resolve cited ``W*`` references into deduplicated ``WebSourceRef`` objects."""
+        if not web_evidence or not synthesized_web_citations:
+            return []
+
+        from clinical_graph.schemas.query import WebSourceRef
+
+        by_ref: dict[str, Any] = {}
+        for idx, item in enumerate(web_evidence, start=1):
+            by_ref[f"W{idx}"] = item
+
+        ordered_ids: list[str] = []
+        grouped_quotes: dict[str, list[str]] = {}
+        sources_by_id: dict[str, Any] = {}
+
+        for item in synthesized_web_citations:
+            ref_id = item.ref_id.strip().upper()
+            src = by_ref.get(ref_id)
+            if src is None:
+                continue
+            rid = getattr(src, "result_id", None) or (
+                src.get("result_id") if isinstance(src, dict) else ref_id
+            )
+            if rid not in grouped_quotes:
+                ordered_ids.append(rid)
+                grouped_quotes[rid] = []
+                sources_by_id[rid] = src
+            quote = item.quote.strip()
+            if quote and quote not in grouped_quotes[rid]:
+                grouped_quotes[rid].append(quote)
+
+        resolved: list[WebSourceRef] = []
+        for rid in ordered_ids:
+            src = sources_by_id[rid]
+            url = getattr(src, "url", None) or (src.get("url") if isinstance(src, dict) else "")
+            title = getattr(src, "title", None) or (src.get("title") if isinstance(src, dict) else "")
+            domain = getattr(src, "domain", None) or (src.get("domain") if isinstance(src, dict) else "")
+            content_type = getattr(src, "content_type", None) or (
+                src.get("content_type") if isinstance(src, dict) else "html"
+            )
+            tier = getattr(src, "tier", None) or (src.get("tier") if isinstance(src, dict) else "dominant")
+            resolved.append(
+                WebSourceRef(
+                    result_id=str(rid),
+                    url=str(url),
+                    title=str(title),
+                    domain=str(domain),
+                    content_type=content_type,
+                    tier=tier,
+                    excerpts=grouped_quotes[rid],
+                )
+            )
+        return resolved
 
     @staticmethod
     def _rebuild_citations(
@@ -525,6 +646,7 @@ class AnswerAgent:
         retrieved_chunks: list[dict[str, str]] | None = None,
         retrieved_tables: list[dict[str, str]] | None = None,
         chunk_lookup: dict[str, str] | None = None,
+        web_evidence: list[Any] | None = None,
     ) -> list[str]:
         sections, _ = cls._build_context_sections_with_refs(
             request=request,
@@ -536,6 +658,7 @@ class AnswerAgent:
             retrieved_chunks=retrieved_chunks,
             retrieved_tables=retrieved_tables,
             chunk_lookup=chunk_lookup,
+            web_evidence=web_evidence,
         )
         return sections
 
@@ -550,10 +673,10 @@ class AnswerAgent:
         retrieved_chunks: list[dict[str, str]] | None = None,
         retrieved_tables: list[dict[str, str]] | None = None,
         chunk_lookup: dict[str, str] | None = None,
+        web_evidence: list[Any] | None = None,
     ) -> tuple[list[str], dict[str, dict[str, str | None]]]:
         sections: list[str] = [f"Query: {request.query}"]
         ref_map: dict[str, dict[str, str | None]] = {}
-        chunk_map = chunk_lookup or {}
 
         if request.patient_context is not None:
             ctx_parts: list[str] = []
@@ -604,7 +727,9 @@ class AnswerAgent:
                 if cid:
                     chunk_id_to_ref[cid] = ref_id
                 header = f"[{label}] ({cid})" if cid else f"[{label}]"
-                chunk_lines.append(f"- [{ref_id}] {header}: {text}")
+                chunk_lines.append(
+                    f'- [{ref_id}] {header}: <source_data ref="{ref_id}">{text}</source_data>'
+                )
                 ref_map[ref_id] = {
                     "doc_id": chunk.get("doc_id") or None,
                     "chunk_id": cid or None,
@@ -628,7 +753,9 @@ class AnswerAgent:
                 label = table.get("slug") or table.get("doc_id", "")
                 tid = table.get("table_id") or table.get("chunk_id") or ""
                 header = f"[{label}] ({tid})" if tid else f"[{label}]"
-                table_lines.append(f"- [{ref_id}] {header}:\n{md}")
+                table_lines.append(
+                    f'- [{ref_id}] {header}:\n<source_data ref="{ref_id}">\n{md}\n</source_data>'
+                )
                 ref_map[ref_id] = {
                     "doc_id": table.get("doc_id") or None,
                     "chunk_id": tid or None,
@@ -687,5 +814,22 @@ class AnswerAgent:
                 for doc in documents
             ]
             sections.append("Supporting sources:\n" + "\n".join(doc_lines))
+
+        if web_evidence:
+            web_lines: list[str] = []
+            for idx, item in enumerate(web_evidence, start=1):
+                title = getattr(item, "title", None) or (item.get("title") if isinstance(item, dict) else "")
+                url = getattr(item, "url", None) or (item.get("url") if isinstance(item, dict) else "")
+                domain = getattr(item, "domain", None) or (item.get("domain") if isinstance(item, dict) else "")
+                chunks = getattr(item, "chunks", None) if not isinstance(item, dict) else item.get("chunks")
+                joined = "\n\n".join(c.strip() for c in (chunks or []) if c and c.strip())
+                if not joined:
+                    continue
+                ref_id = f"W{idx}"
+                web_lines.append(
+                    f'- [{ref_id}] [{domain}] {title} ({url}):\n<source_data ref="{ref_id}">\n{joined}\n</source_data>'
+                )
+            if web_lines:
+                sections.append("Web fallback evidence:\n" + "\n".join(web_lines))
 
         return sections, ref_map

@@ -11,19 +11,23 @@ from fastapi import (
     Form,
     HTTPException,
     Query,
+    Request,
     UploadFile,
     status,
 )
 from fastapi.responses import JSONResponse
 
 from clinical_graph.api.deps import (
+    extract_client_ip,
     get_ingestion_pipeline,
     get_job_store,
     get_knowledge_manager,
     get_openai_api_key,
 )
 from clinical_graph.api.rate_limit import check_rate_limit
+from clinical_graph.config import get_settings
 from clinical_graph.graph.manager import KnowledgeManager
+from clinical_graph.guardrails.prompt_guard import ClinicalGuardClient
 from clinical_graph.pipelines.ingestion import (
     DocumentRejectedError,
     IngestionPipeline,
@@ -50,6 +54,30 @@ def _parse_csv_list(raw: str | None) -> list[str]:
     if not raw:
         return []
     return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+async def _reject_if_document_injection(
+    text: str,
+    *,
+    extra_texts: list[str] | None = None,
+    client_ip: str | None = None,
+) -> None:
+    """Raise HTTP 400 if ``text`` or ``extra_texts`` triggers the prompt-injection guardrail."""
+    settings = get_settings()
+    client = ClinicalGuardClient(
+        settings.clinical_guard_url,
+        timeout=settings.clinical_guard_timeout_seconds,
+    )
+    guard_res = await client.scan_document(
+        text,
+        extra_texts=extra_texts,
+        client_ip=client_ip,
+    )
+    if guard_res.blocked:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Document rejected by prompt-injection guardrail: {guard_res.reason}",
+        )
 
 
 async def _execute_ingestion_job(
@@ -84,6 +112,7 @@ async def _execute_ingestion_job(
     dependencies=[Depends(check_rate_limit)],
 )
 async def create_document(
+    request: Request,
     payload: DocumentCreate,
     background_tasks: BackgroundTasks,
     extract: bool = Query(default=False),
@@ -95,6 +124,13 @@ async def create_document(
     api_key: str | None = Depends(get_openai_api_key),
 ) -> DocumentRecord | JSONResponse:
     """Ingest a clinical document into the database and knowledge graph."""
+    client_ip = extract_client_ip(request)
+    extra_texts = [payload.metadata.title] if payload.metadata.title else []
+    await _reject_if_document_injection(
+        payload.content,
+        extra_texts=extra_texts,
+        client_ip=client_ip,
+    )
     if async_extract:
         job = job_store.create_job(title=payload.metadata.title)
         background_tasks.add_task(
@@ -143,6 +179,7 @@ async def create_document(
     dependencies=[Depends(check_rate_limit)],
 )
 async def upload_document(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     title: str = Form(...),
@@ -160,8 +197,24 @@ async def upload_document(
     api_key: str | None = Depends(get_openai_api_key),
 ) -> DocumentRecord | JSONResponse:
     """Upload and parse a ``.pdf``, ``.md``, or ``.txt`` file, then ingest it."""
+    client_ip = extract_client_ip(request)
     data = await file.read()
     filename = file.filename or "upload.txt"
+    try:
+        parsed = pipeline.parser.parse_bytes(data, filename)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    extra_texts = [item for item in (title, *parsed.tables) if item]
+    await _reject_if_document_injection(
+        parsed.text,
+        extra_texts=extra_texts,
+        client_ip=client_ip,
+    )
+
     parsed_conditions = _parse_csv_list(conditions)
     parsed_populations = _parse_csv_list(target_populations)
     parsed_specialties = _parse_csv_list(specialties)

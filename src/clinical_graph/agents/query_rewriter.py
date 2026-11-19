@@ -16,10 +16,21 @@ RetrievalMode = Literal["rag", "hybrid"]
 
 
 class RewrittenQueries(BaseModel):
-    """Structured output containing standalone clinical search queries and routing mode."""
+    """Structured output containing standalone clinical search queries, routing mode, and scope gate."""
 
     search_queries: list[str] = Field(min_length=1, max_length=5)
     retrieval_mode: Literal["rag", "hybrid"] = "hybrid"
+    is_medical: bool = True
+    off_topic_reason: str | None = None
+
+
+class RewrittenQueriesWithWeb(RewrittenQueries):
+    """Extended output adding 1 to 2 concise keyword queries for Tavily when web search is enabled."""
+
+    web_search_queries: list[str] = Field(default_factory=list, max_length=3)
+
+
+QueryRewriteOutput = RewrittenQueries
 
 
 class QueryRewriter:
@@ -37,14 +48,14 @@ class QueryRewriter:
         self.prompt_version = prompt_version or template.version
         self._system_prompt = template.system_prompt
 
-    async def rewrite_with_routing_async(
+    async def rewrite_with_gate_async(
         self,
         request: QueryRequest,
         api_key: str | None = None,
-    ) -> tuple[list[str], Literal["rag", "hybrid"], LLMUsage]:
-        """Generate deduplicated search queries, routing mode, and ``LLMUsage``."""
+    ) -> tuple[list[str], Literal["rag", "hybrid"], bool, str | None, LLMUsage]:
+        """Generate search queries, routing mode, ``is_medical`` gate, and ``LLMUsage``."""
         if self.llm_client is None:
-            return [request.query], "hybrid", LLMUsage()
+            return [request.query], "hybrid", True, None, LLMUsage()
 
         user_prompt = self._build_user_prompt(request)
         usage = LLMUsage()
@@ -63,10 +74,81 @@ class QueryRewriter:
             parsed = RewrittenQueries.model_validate_json(raw)
         except Exception as exc:
             logger.warning("Query rewriting failed; falling back to original query: %s", exc)
-            return [request.query], "hybrid", usage
+            return [request.query], "hybrid", True, None, usage
 
         deduped = _dedup_queries(parsed.search_queries)[:4]
-        return (deduped or [request.query]), parsed.retrieval_mode, usage
+        return (
+            deduped or [request.query],
+            parsed.retrieval_mode,
+            parsed.is_medical,
+            parsed.off_topic_reason,
+            usage,
+        )
+
+    async def rewrite_with_web_async(
+        self,
+        request: QueryRequest,
+        *,
+        include_web_query: bool = False,
+        api_key: str | None = None,
+    ) -> tuple[list[str], Literal["rag", "hybrid"], bool, str | None, list[str], LLMUsage]:
+        """Generate search queries, routing mode, gate, optional ``web_search_queries``, and usage."""
+        if not include_web_query:
+            queries, mode, is_med, reason, usage = await self.rewrite_with_gate_async(
+                request, api_key=api_key
+            )
+            return queries, mode, is_med, reason, [], usage
+
+        if self.llm_client is None:
+            return [request.query], "hybrid", True, None, [request.query], LLMUsage()
+
+        user_prompt = (
+            self._build_user_prompt(request)
+            + "\n\nAlso generate `web_search_queries`: 1 to 2 short, keyword-focused clinical web "
+            "search queries (3 to 7 words each, no `site:` operators) suitable for searching trusted "
+            "medical websites. Use 1 query for single-topic questions, or 2 queries only when the "
+            "question asks about distinct sub-topics (e.g. ['apixaban dose reduction renal', "
+            "'apixaban reversal agent bleeding'])."
+        )
+        usage = LLMUsage()
+        try:
+            raw, usage = await complete_with_usage_compat(
+                self.llm_client,
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": self._system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.0,
+                response_format=RewrittenQueriesWithWeb,
+                api_key=api_key,
+            )
+            parsed = RewrittenQueriesWithWeb.model_validate_json(raw)
+        except Exception as exc:
+            logger.warning("Query rewriting (with web) failed; falling back: %s", exc)
+            return [request.query], "hybrid", True, None, [request.query], usage
+
+        deduped = _dedup_queries(parsed.search_queries)[:4]
+        web_qs = _dedup_queries(parsed.web_search_queries)[:2] or [request.query]
+        return (
+            deduped or [request.query],
+            parsed.retrieval_mode,
+            parsed.is_medical,
+            parsed.off_topic_reason,
+            web_qs,
+            usage,
+        )
+
+    async def rewrite_with_routing_async(
+        self,
+        request: QueryRequest,
+        api_key: str | None = None,
+    ) -> tuple[list[str], Literal["rag", "hybrid"], LLMUsage]:
+        """Generate deduplicated search queries, routing mode, and ``LLMUsage``."""
+        queries, mode, _, _, usage = await self.rewrite_with_gate_async(
+            request, api_key=api_key
+        )
+        return queries, mode, usage
 
     async def rewrite_with_usage_async(
         self,

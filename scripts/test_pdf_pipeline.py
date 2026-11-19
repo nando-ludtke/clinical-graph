@@ -41,8 +41,8 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--output-dir",
-        default="test_data/results",
-        help="Directory for output artifacts (default: test_data/results).",
+        default="eval/results",
+        help="Directory for output artifacts (default: eval/results).",
     )
     parser.add_argument(
         "--max-chars",

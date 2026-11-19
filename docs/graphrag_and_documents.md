@@ -18,6 +18,7 @@ This document describes graph construction, the typed vector store, clinical doc
 - Cleaned document text is split by `chunk_text_with_spans` (`src/clinical_graph/parser/chunker.py`) into `~1,300`-char `is_chunk` retrieval chunks (splitting on Markdown headings and paragraphs while keeping Markdown tables intact as atomic blocks).
 - `group_chunks_for_extraction` groups consecutive `~1,300`-char retrieval chunks into `~5,000`-char extraction windows (`max_extract_chars=5000`).
 - **Single-pass `GraphExtractor`** (`src/clinical_graph/agents/extractor.py`, `prompts/graph_extraction.yml` `v1`):
+  - Wraps each extraction window in `<source_data>...</source_data>` delimiters so the extraction prompt treats document text strictly as untrusted data and ignores any embedded instructions.
   - Extracts `{nodes, edges}` in a single structured LLM pass per extraction window.
   - Each `ExtractedEdge` captures `source`, `target`, `relation`, `relationship_description`, `relationship_strength` (`1–10`), and a verbatim `quote`.
   - Rejects self-loops (`source == target`), maps each edge `quote` back to its exact `~1,300`-char `chunk_id` (`{doc_id}:chunk:{i}`), merges duplicate/parallel edges using `max(weight)` plus `evidence` provenance count, and merges nodes by normalized `(node_type, canonical_name)` while uniting `aliases`.
@@ -34,7 +35,18 @@ This document describes graph construction, the typed vector store, clinical doc
 ## 2. Document Handling & Tight Cross-Store Deletion
 
 ### Structured Metadata (`DocumentMetadata`)
-Each ingested document carries `DocumentMetadata` (`src/clinical_graph/schemas/document.py`), including `title`, `publisher`, `source_url`, `language`, `effective_year`, `version`, `conditions`, `target_populations`, `specialties`, `content_hash` (SHA-256), and `status` (`active`, `superseded`, `archived`).
+Each ingested document carries `DocumentMetadata` (`src/clinical_graph/schemas/document.py`), including `title`, `publisher`, `source_url`, `language`, `effective_year`, `version`, `conditions`, `target_populations`, `specialties`, `content_hash` (SHA-256), `is_frozen` (`bool`, protecting showcase documents from deletion), and `status` (`active`, `superseded`, `archived`).
+
+### Atomic Pre-Ingestion Prompt-Injection Scanning (`scan_document`)
+- Before any document is persisted to SQLite, disk, vector store, or the knowledge graph, `POST /v1/documents` and `POST /v1/documents/upload` run `ClinicalGuardClient.scan_document` (`src/clinical_graph/guardrails/prompt_guard.py`) over the document text plus metadata/table `extra_texts`.
+- **Two-stage screening**:
+  1. Runs deterministic local regex & zero-width/bidi character smuggling checks (`scan_text_for_injection`) first.
+  2. Splits text and `extra_texts` into overlapping **`1,200`-char windows (`150`-char overlap)** and screens them concurrently against `POST /v1/guard/prompt` under `asyncio.Semaphore(2)` (with `X-Forwarded-For` forwarding and `Retry-After` backoff on `429`/`503`).
+- If any window is flagged, ingestion aborts atomically (`HTTP 400`) with zero partial writes to `DocumentDatabase`, `LocalVectorStore`, `ClinicalKnowledgeGraph`, or disk.
+
+### Frozen Showcase Documents (`is_frozen`) & 24-Hour Auto-Pruning
+- Documents marked `is_frozen=True` represent pre-loaded showcase corpora; `DELETE /v1/documents/{doc_id}` rejects removal of frozen documents with `HTTP 403` (`"Frozen example document cannot be removed."`).
+- Non-frozen user uploads (`is_frozen=False`) are subject to periodic showcase auto-cleanup configured via `AUTO_PRUNE_NON_FROZEN_HOURS` (default `24` hours), which prunes expired non-frozen uploads via `delete_document` while leaving frozen showcase documents intact.
 
 ### `doc_type` vs. `source_type`
 - **`doc_type` (`DocType`)**: Clinical authority / semantic category (`guideline`, `drug_label`, `peer_reviewed`, `clinical_trial`, `internal_sop`, `web_snippet`).

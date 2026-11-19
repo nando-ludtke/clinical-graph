@@ -64,8 +64,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("test_data/results"),
-        help='Directory for --dev report outputs (default: "test_data/results").',
+        default=Path("eval/results"),
+        help='Directory for --dev report outputs (default: "eval/results").',
     )
     return parser
 

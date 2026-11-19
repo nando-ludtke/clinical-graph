@@ -6,10 +6,14 @@ from contextlib import suppress
 import json
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
-from clinical_graph.api.deps import get_openai_api_key, get_query_pipeline
+from clinical_graph.api.deps import (
+    extract_client_ip,
+    get_openai_api_key,
+    get_query_pipeline,
+)
 from clinical_graph.api.rate_limit import check_rate_limit
 from clinical_graph.pipelines.query import QueryPipeline
 from clinical_graph.schemas.query import QueryRequest, QueryResponse
@@ -23,12 +27,14 @@ router = APIRouter(tags=["query"])
     dependencies=[Depends(check_rate_limit)],
 )
 async def query_clinical_graph(
+    request: Request,
     payload: QueryRequest,
     pipeline: QueryPipeline = Depends(get_query_pipeline),
     api_key: str | None = Depends(get_openai_api_key),
 ) -> QueryResponse:
     """Execute filtered hybrid graph retrieval and synthesize a grounded clinical answer."""
-    return await pipeline.run(payload, api_key=api_key)
+    client_ip = extract_client_ip(request)
+    return await pipeline.run(payload, api_key=api_key, client_ip=client_ip)
 
 
 @router.post(
@@ -36,11 +42,13 @@ async def query_clinical_graph(
     dependencies=[Depends(check_rate_limit)],
 )
 async def stream_query_clinical_graph(
+    request: Request,
     payload: QueryRequest,
     pipeline: QueryPipeline = Depends(get_query_pipeline),
     api_key: str | None = Depends(get_openai_api_key),
 ) -> StreamingResponse:
     """Stream Server-Sent Events (SSE) for each stage of the hybrid GraphRAG query."""
+    client_ip = extract_client_ip(request)
     queue: asyncio.Queue[tuple[str, str] | None] = asyncio.Queue()
 
     def on_event(event_name: str, data: dict[str, Any]) -> None:
@@ -51,6 +59,7 @@ async def stream_query_clinical_graph(
             response = await pipeline.run(
                 payload,
                 api_key=api_key,
+                client_ip=client_ip,
                 on_event=on_event,
             )
             await queue.put(("done", response.model_dump_json()))

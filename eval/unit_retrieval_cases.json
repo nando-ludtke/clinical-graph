@@ -1,0 +1,26 @@
+[
+  {
+    "id": "ret_rag_01",
+    "query": "When should metformin be discontinued before iodinated contrast imaging procedures?",
+    "mode": "rag",
+    "expected_terms": ["contrast", "eGFR", "metformin"]
+  },
+  {
+    "id": "ret_rag_02",
+    "query": "What is the recommended HbA1c target corridor for adults with Type 2 diabetes?",
+    "mode": "rag",
+    "expected_terms": ["HbA1c", "6,5"]
+  },
+  {
+    "id": "ret_hybrid_01",
+    "query": "Which gastrointestinal and biliary adverse effects were reported with liraglutide in Type 2 diabetes?",
+    "mode": "hybrid",
+    "expected_terms": ["Liraglutid", "Gallenstein"]
+  },
+  {
+    "id": "ret_hybrid_02",
+    "query": "How does poorly controlled diabetes during pregnancy affect fetal and maternal risks?",
+    "mode": "hybrid",
+    "expected_terms": ["macrosomia", "pregnancy"]
+  }
+]

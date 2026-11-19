@@ -1,0 +1,181 @@
+{
+  "threshold": 0.48,
+  "passed": 5,
+  "total": 6,
+  "results": [
+    {
+      "id": "trig_local_01",
+      "query": "What is the recommended starting dose and maximum daily dose of metformin in adults with Type 2 diabetes?",
+      "expected_trigger": false,
+      "expected_path": "none",
+      "actual_trigger": false,
+      "actual_path": "none",
+      "passed": true,
+      "min_label_score": 0.586,
+      "decision_prob": 0.97,
+      "decision_tier": "both",
+      "used_decisions_api": true,
+      "search_queries": [
+        "Metformin starting dose Type 2 diabetes",
+        "Metformin maximum daily dose adults",
+        "Metformin dosing guidelines diabetes",
+        "Type 2 diabetes metformin dosage recommendations"
+      ],
+      "rewriter_mode": "rag",
+      "stage_latencies_ms": {
+        "rewrite_ms": 1703.62,
+        "embed_ms": 1183.7,
+        "label_check_ms": 8.47,
+        "retrieve_ctx_ms": 5.6,
+        "decision_ms": 863.38,
+        "total_ms": 3764.8
+      },
+      "latency_ms": 3764.8
+    },
+    {
+      "id": "trig_local_02",
+      "query": "What HbA1c target range is recommended for most adults with Type 2 diabetes?",
+      "expected_trigger": false,
+      "expected_path": "none",
+      "actual_trigger": false,
+      "actual_path": "none",
+      "passed": true,
+      "min_label_score": 0.5933,
+      "decision_prob": 0.7,
+      "decision_tier": "both",
+      "used_decisions_api": true,
+      "search_queries": [
+        "HbA1c target range Type 2 diabetes",
+        "recommended HbA1c levels adults",
+        "Type 2 diabetes management guidelines",
+        "HbA1c goals for diabetes patients"
+      ],
+      "rewriter_mode": "rag",
+      "stage_latencies_ms": {
+        "rewrite_ms": 1459.96,
+        "embed_ms": 731.21,
+        "label_check_ms": 3.3,
+        "retrieve_ctx_ms": 4.39,
+        "decision_ms": 521.55,
+        "total_ms": 2720.44
+      },
+      "latency_ms": 2720.44
+    },
+    {
+      "id": "trig_decision_01",
+      "query": "What is the exact FDA-approved pediatric dosing of liraglutide (Victoza) for Type 2 diabetes in patients aged 10 years and older?",
+      "expected_trigger": true,
+      "expected_path": "decision_model",
+      "actual_trigger": true,
+      "actual_path": "decision_model",
+      "passed": true,
+      "min_label_score": 0.5105,
+      "decision_prob": 0.0,
+      "decision_tier": "both",
+      "used_decisions_api": true,
+      "search_queries": [
+        "FDA pediatric dosing liraglutide",
+        "Victoza dosing guidelines Type 2 diabetes",
+        "Liraglutide pediatric dosing 10 years",
+        "Liraglutide approval pediatric Type 2 diabetes"
+      ],
+      "rewriter_mode": "rag",
+      "stage_latencies_ms": {
+        "rewrite_ms": 1752.2,
+        "embed_ms": 204.25,
+        "label_check_ms": 2.9,
+        "retrieve_ctx_ms": 4.23,
+        "decision_ms": 189.27,
+        "total_ms": 2152.86
+      },
+      "latency_ms": 2152.86
+    },
+    {
+      "id": "trig_decision_02",
+      "query": "What is the FDA-approved heart failure dosing of empagliflozin and its exact eGFR cutoff for initiation in heart failure?",
+      "expected_trigger": true,
+      "expected_path": "decision_model",
+      "actual_trigger": true,
+      "actual_path": "decision_model",
+      "passed": true,
+      "min_label_score": 0.6189,
+      "decision_prob": 0.0,
+      "decision_tier": "both",
+      "used_decisions_api": true,
+      "search_queries": [
+        "Empagliflozin heart failure dosing",
+        "Empagliflozin eGFR cutoff",
+        "FDA guidelines empagliflozin heart failure",
+        "Heart failure treatment empagliflozin initiation criteria"
+      ],
+      "rewriter_mode": "rag",
+      "stage_latencies_ms": {
+        "rewrite_ms": 1551.46,
+        "embed_ms": 195.06,
+        "label_check_ms": 4.37,
+        "retrieve_ctx_ms": 4.63,
+        "decision_ms": 226.81,
+        "total_ms": 1982.34
+      },
+      "latency_ms": 1982.34
+    },
+    {
+      "id": "trig_label_01",
+      "query": "What are the CrCl-based dosing adjustments for amoxicillin-clavulanate in severe renal impairment?",
+      "expected_trigger": true,
+      "expected_path": "label_mismatch",
+      "actual_trigger": true,
+      "actual_path": "label_mismatch",
+      "passed": true,
+      "min_label_score": 0.3502,
+      "decision_prob": null,
+      "decision_tier": null,
+      "used_decisions_api": null,
+      "search_queries": [
+        "Amoxicillin-clavulanate dosing adjustments",
+        "CrCl dosing amoxicillin-clavulanate",
+        "Renal impairment amoxicillin-clavulanate",
+        "Severe renal impairment dosing guidelines"
+      ],
+      "rewriter_mode": "rag",
+      "stage_latencies_ms": {
+        "rewrite_ms": 1680.12,
+        "embed_ms": 193.34,
+        "label_check_ms": 3.07,
+        "retrieve_ctx_ms": 0.0,
+        "decision_ms": 0.0,
+        "total_ms": 1876.54
+      },
+      "latency_ms": 1876.54
+    },
+    {
+      "id": "trig_label_02",
+      "query": "What is the first-line pharmacologic treatment and target blood pressure for preeclampsia with severe features?",
+      "expected_trigger": true,
+      "expected_path": "label_mismatch",
+      "actual_trigger": true,
+      "actual_path": "decision_model",
+      "passed": false,
+      "min_label_score": 0.6773,
+      "decision_prob": 0.0,
+      "decision_tier": "both",
+      "used_decisions_api": true,
+      "search_queries": [
+        "First-line treatment preeclampsia",
+        "Target blood pressure severe preeclampsia",
+        "Preeclampsia management guidelines",
+        "Antihypertensive therapy preeclampsia"
+      ],
+      "rewriter_mode": "rag",
+      "stage_latencies_ms": {
+        "rewrite_ms": 1547.13,
+        "embed_ms": 264.54,
+        "label_check_ms": 3.4,
+        "retrieve_ctx_ms": 4.45,
+        "decision_ms": 416.54,
+        "total_ms": 2236.08
+      },
+      "latency_ms": 2236.08
+    }
+  ]
+}

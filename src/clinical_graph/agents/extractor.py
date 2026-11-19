@@ -211,12 +211,13 @@ class GraphExtractor:
         window_text: str,
         api_key: str | None = None,
     ) -> tuple[list[ExtractedNode], list[ExtractedEdge], LLMUsage]:
+        delimited_window = f"<source_data>\n{window_text}\n</source_data>"
         raw, usage = await complete_with_usage_compat(
             self.llm_client,
             model=self.node_model,
             messages=[
                 {"role": "system", "content": self._graph_system_prompt},
-                {"role": "user", "content": window_text},
+                {"role": "user", "content": delimited_window},
             ],
             temperature=0.0,
             response_format=_SinglePassExtractionPayload,

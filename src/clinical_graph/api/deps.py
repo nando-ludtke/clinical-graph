@@ -7,6 +7,7 @@ from clinical_graph.agents.classifier import DocumentClassifier
 from clinical_graph.agents.extractor import GraphExtractor
 from clinical_graph.agents.query_rewriter import QueryRewriter
 from clinical_graph.graph.manager import KnowledgeManager
+from clinical_graph.guardrails.prompt_guard import ClinicalGuardClient
 from clinical_graph.llm.client import LiteLLMClient
 from clinical_graph.pipelines.ingestion import IngestionPipeline
 from clinical_graph.pipelines.jobs import JobStore
@@ -58,10 +59,20 @@ def get_ingestion_pipeline(request: Request) -> IngestionPipeline:
 
 def get_query_pipeline(request: Request) -> QueryPipeline:
     """Construct a ``QueryPipeline`` wired to ``app.state`` services."""
+    settings = request.app.state.settings
+    guard_client = (
+        ClinicalGuardClient(
+            base_url=settings.clinical_guard_url,
+            timeout=settings.clinical_guard_timeout_seconds,
+        )
+        if settings.clinical_guard_url
+        else None
+    )
     return QueryPipeline(
         manager=request.app.state.knowledge_manager,
         query_rewriter=request.app.state.query_rewriter,
         answer_agent=request.app.state.answer_agent,
+        clinical_guard_client=guard_client,
     )
 
 
@@ -71,3 +82,15 @@ def get_openai_api_key(
 ) -> str | None:
     """Return per-request ``X-OpenAI-API-Key`` header or fallback to configured setting."""
     return x_openai_api_key or request.app.state.settings.openai_api_key
+
+
+def extract_client_ip(request: Request) -> str | None:
+    """Return the visitor IP from ``X-Forwarded-For`` (first hop) or ``request.client.host``."""
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        first_ip = forwarded_for.split(",")[0].strip()
+        if first_ip:
+            return first_ip
+    if request.client is not None and request.client.host:
+        return request.client.host
+    return None

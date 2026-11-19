@@ -8,6 +8,12 @@ services:
     env_file:
       - path: .env
         required: false
+    environment:
+      CLINICAL_GUARD_URL: ${CLINICAL_GUARD_URL:-http://host.docker.internal:8080}
+      CLINICAL_GUARD_HEALTH_POLL_SECONDS: ${CLINICAL_GUARD_HEALTH_POLL_SECONDS:-30}
+      AUTO_PRUNE_NON_FROZEN_HOURS: ${AUTO_PRUNE_NON_FROZEN_HOURS:-24}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./data:/app/data
     restart: unless-stopped

@@ -7,11 +7,13 @@ import inspect
 import math
 import re
 import time
-from typing import Any
+from typing import Any, Literal, overload
 
 from clinical_graph.agents.answer_agent import AnswerAgent, _chunk_sort_key
 from clinical_graph.agents.query_rewriter import QueryRewriter
+from clinical_graph.config import get_settings
 from clinical_graph.graph.manager import KnowledgeManager
+from clinical_graph.guardrails.prompt_guard import ClinicalGuardClient, GuardCheckResult
 from clinical_graph.parser.cleaner import strip_references_and_boilerplate
 from clinical_graph.schemas.document import ChunkSpan, DocumentFilter, DocumentRecord
 from clinical_graph.schemas.metrics import PipelineMetrics
@@ -21,6 +23,14 @@ from clinical_graph.schemas.query import (
     QueryResponse,
     ResolvedRetrievalMode,
     RetrievalTrace,
+    WebSourceRef,
+)
+from clinical_graph.search import (
+    OpenAIDecisionClient,
+    SourceAuditorAgent,
+    TavilySearchClient,
+    WebSearchAgent,
+    WebSearchOutcome,
 )
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
@@ -51,6 +61,7 @@ def _reciprocal_rank_fusion(
     ]
 
 
+@overload
 def _rank_traversed_edges(
     traversed_edges: list[dict[str, Any]],
     seed_nodes: list[tuple[str, float]],
@@ -58,8 +69,32 @@ def _rank_traversed_edges(
     search_queries: list[str],
     *,
     graph: Any = None,
-) -> list[dict[str, Any]]:
-    """Score and sort non-self-loop edges by IDF-weighted BM25, bridge bonus, and hub damping."""
+    include_scores: Literal[False] = False,
+) -> list[dict[str, Any]]: ...
+
+
+@overload
+def _rank_traversed_edges(
+    traversed_edges: list[dict[str, Any]],
+    seed_nodes: list[tuple[str, float]],
+    query: str,
+    search_queries: list[str],
+    *,
+    graph: Any = None,
+    include_scores: Literal[True],
+) -> list[tuple[dict[str, Any], float]]: ...
+
+
+def _rank_traversed_edges(
+    traversed_edges: list[dict[str, Any]],
+    seed_nodes: list[tuple[str, float]],
+    query: str,
+    search_queries: list[str],
+    *,
+    graph: Any = None,
+    include_scores: bool = False,
+) -> list[dict[str, Any]] | list[tuple[dict[str, Any], float]]:
+    """Score and sort non-self-loop edges by IDF-weighted BM25, bridge bonus, hub damping, and hop decay."""
     non_self_loops = [
         edge
         for edge in traversed_edges
@@ -121,10 +156,18 @@ def _rank_traversed_edges(
         deg_u = max(1, graph.degree(u)) if (graph is not None and u in graph) else 1
         deg_v = max(1, graph.degree(v)) if (graph is not None and v in graph) else 1
         hub_damping = 1.0 / math.sqrt(max(1, deg_u * deg_v))
-        return bm25 * (0.5 + 0.05 * weight) * evidence_factor * hub_damping
+        hop = max(1, int(edge.get("hop") or 1))
+        hop_decay = 1.0 / (1.0 + 0.35 * (hop - 1))
+        return bm25 * (0.5 + 0.05 * weight) * evidence_factor * hub_damping * hop_decay
 
-    scored_indices = sorted(range(num_docs), key=_edge_score, reverse=True)
-    return [non_self_loops[idx] for idx in scored_indices]
+    scored_pairs = [
+        (non_self_loops[idx], _edge_score(idx))
+        for idx in range(num_docs)
+    ]
+    scored_pairs.sort(key=lambda item: item[1], reverse=True)
+    if include_scores:
+        return scored_pairs
+    return [edge for edge, _ in scored_pairs]
 
 
 _rank_edges = _rank_traversed_edges
@@ -431,6 +474,7 @@ def _search_vector_entries(
     allowed_doc_ids: set[str] | None,
     top_k: int,
     api_key: str | None = None,
+    query_vector: Any = None,
 ) -> list[tuple[str, float]]:
     """Search ``vector_store`` with ``entry_types`` and ``allowed_doc_ids`` when supported."""
     if vector_store is None or top_k <= 0:
@@ -444,8 +488,17 @@ def _search_vector_entries(
         }
         if "allowed_doc_ids" in params:
             kwargs["allowed_doc_ids"] = allowed_doc_ids
+        if query_vector is not None and "query_vector" in params:
+            kwargs["query_vector"] = query_vector
         return vector_store.search(query, **kwargs)
     if "node" in entry_types:
+        if query_vector is not None and "query_vector" in params:
+            return vector_store.search(
+                query,
+                top_k=top_k,
+                api_key=api_key,
+                query_vector=query_vector,
+            )
         return vector_store.search(query, top_k=top_k, api_key=api_key)
     return []
 
@@ -661,6 +714,21 @@ def _build_doc_citation_evidence(
     return excerpts, chunk_ids
 
 
+def _resolve_effective_web_fallback(
+    allow_web_fallback: bool | None,
+    default_enabled: bool,
+    guard_res: GuardCheckResult | None = None,
+) -> bool:
+    """Resolve whether web fallback is enabled for this request.
+
+    Web fallback uses allowlisted medical domains, deterministic local regex/hidden-char
+    scanning, and <source_data> delimiters, so it does not require clinical-guard to be
+    reachable (explicitly confirmed by the user in the UI).
+    """
+    _ = guard_res
+    return bool(allow_web_fallback if allow_web_fallback is not None else default_enabled)
+
+
 class QueryPipeline:
     """Executes metadata pre-filtering, query rewriting, graph traversal, and synthesis."""
 
@@ -669,22 +737,97 @@ class QueryPipeline:
         manager: KnowledgeManager,
         query_rewriter: QueryRewriter | None = None,
         answer_agent: AnswerAgent | None = None,
+        clinical_guard_client: ClinicalGuardClient | None = None,
+        web_search_agent: WebSearchAgent | None = None,
     ) -> None:
         self.manager = manager
         self.query_rewriter = query_rewriter or QueryRewriter()
         self.answer_agent = answer_agent or AnswerAgent()
+        settings = get_settings()
+        if clinical_guard_client is not None:
+            self.clinical_guard_client: ClinicalGuardClient | None = clinical_guard_client
+        else:
+            self.clinical_guard_client = (
+                ClinicalGuardClient(
+                    base_url=settings.clinical_guard_url,
+                    timeout=settings.clinical_guard_timeout_seconds,
+                )
+                if settings.clinical_guard_url
+                else None
+            )
+        if web_search_agent is not None:
+            self.web_search_agent = web_search_agent
+        else:
+            search_client = TavilySearchClient(
+                api_key=settings.tavily_api_key,
+                timeout=settings.web_fetch_timeout_seconds,
+            )
+            auditor = SourceAuditorAgent(
+                embedder=getattr(self.manager.graph.vector_store, "_embedder", None),
+                pdf_preview_chars=settings.web_pdf_preview_chars,
+            )
+            decision_client = OpenAIDecisionClient(
+                decision_model=settings.decision_model,
+                fallback_llm_client=self.answer_agent.llm_client,
+                fallback_model=settings.web_search_model,
+            )
+            self.web_search_agent = WebSearchAgent(
+                llm_client=self.answer_agent.llm_client,
+                search_client=search_client,
+                auditor=auditor,
+                decision_client=decision_client,
+                model=settings.web_search_model,
+                allow_pdf=settings.enable_web_pdf_fetch,
+                include_regional=settings.include_regional_domains,
+                results_per_tier=settings.web_search_results_per_tier,
+                results_per_tier_with_pdf=settings.web_search_results_per_tier_with_pdf,
+                fetch_timeout=settings.web_fetch_timeout_seconds,
+                max_pdf_pages=settings.web_pdf_max_pages,
+            )
 
     async def run(
         self,
         payload: QueryRequest,
         *,
         api_key: str | None = None,
+        client_ip: str | None = None,
         on_step: Callable[[str], None] | None = None,
         on_event: Callable[[str, dict[str, Any]], None] | None = None,
     ) -> QueryResponse:
         """Run the full hybrid GraphRAG query pipeline and return ``QueryResponse``."""
         total_t0 = time.perf_counter()
         latencies_ms: dict[str, float] = {}
+
+        guard_res: GuardCheckResult | None = None
+        if self.clinical_guard_client is not None:
+            t_guard = time.perf_counter()
+            guard_res = await self.clinical_guard_client.check_prompt(
+                payload.query,
+                session_id=payload.session_id,
+                client_ip=client_ip,
+            )
+            latencies_ms["guard"] = round((time.perf_counter() - t_guard) * 1000.0, 3)
+            _emit_event(
+                on_event,
+                "guard",
+                {"reachable": guard_res.reachable, "blocked": guard_res.blocked},
+            )
+            if guard_res.blocked:
+                latencies_ms["total"] = round((time.perf_counter() - total_t0) * 1000.0, 3)
+                return QueryResponse(
+                    session_id=payload.session_id,
+                    answer="Request blocked by prompt-injection guardrail.",
+                    citations=[],
+                    guard_reachable=guard_res.reachable,
+                    guard_blocked=True,
+                    metrics=PipelineMetrics(latencies_ms=latencies_ms),
+                )
+
+        effective_allow_web_fallback = _resolve_effective_web_fallback(
+            payload.allow_web_fallback,
+            get_settings().enable_web_fallback,
+            guard_res,
+        )
 
         t0 = time.perf_counter()
         doc_filter = (
@@ -710,9 +853,54 @@ class QueryPipeline:
         )
 
         t0 = time.perf_counter()
-        search_queries, rewriter_mode, rewrite_usage = (
-            await self.query_rewriter.rewrite_with_routing_async(payload, api_key=api_key)
-        )
+        web_search_queries: list[str] = []
+        if hasattr(self.query_rewriter, "rewrite_with_web_async"):
+            (
+                rewriter_queries,
+                rewriter_mode,
+                is_medical,
+                off_topic_reason,
+                web_search_queries,
+                rewrite_usage,
+            ) = await self.query_rewriter.rewrite_with_web_async(
+                payload,
+                include_web_query=effective_allow_web_fallback,
+                api_key=api_key,
+            )
+        elif hasattr(self.query_rewriter, "rewrite_with_gate_async"):
+            (
+                rewriter_queries,
+                rewriter_mode,
+                is_medical,
+                off_topic_reason,
+                rewrite_usage,
+            ) = await self.query_rewriter.rewrite_with_gate_async(
+                payload, api_key=api_key
+            )
+        else:
+            rewriter_queries, rewriter_mode, rewrite_usage = (
+                await self.query_rewriter.rewrite_with_routing_async(
+                    payload, api_key=api_key
+                )
+            )
+            is_medical = True
+            off_topic_reason = None
+        max_queries = max(len(rewriter_queries), 1)
+        search_queries: list[str] = []
+        seen_queries: set[str] = set()
+        for candidate in [payload.query.strip(), *rewriter_queries]:
+            cleaned = candidate.strip()
+            if not cleaned:
+                continue
+            key = cleaned.casefold()
+            if key in seen_queries:
+                continue
+            seen_queries.add(key)
+            search_queries.append(cleaned)
+            if len(search_queries) >= max_queries:
+                break
+        if not search_queries:
+            search_queries = [payload.query]
         if payload.retrieval_mode == "rag":
             chosen_mode: ResolvedRetrievalMode = "rag"
         elif payload.retrieval_mode == "hybrid":
@@ -730,6 +918,22 @@ class QueryPipeline:
             {"search_queries": search_queries, "chosen_mode": chosen_mode},
         )
 
+        if not is_medical:
+            refusal_detail = f" ({off_topic_reason})" if off_topic_reason else ""
+            return QueryResponse(
+                session_id=payload.session_id,
+                answer=(
+                    "I can only answer clinical, medical, and pharmacological questions "
+                    f"based on the loaded knowledge base{refusal_detail}."
+                ),
+                citations=[],
+                guard_reachable=guard_res.reachable if guard_res is not None else None,
+                metrics=PipelineMetrics(
+                    latencies_ms={"query_rewrite": latencies_ms["query_rewrite"]},
+                    usage=rewrite_usage,
+                ),
+            )
+
         vector_store = self.manager.graph.vector_store
         chunk_index, table_index, docs_by_id = _build_chunk_and_table_indexes(candidate_docs)
         cleaned_cache: dict[str, str] = {}
@@ -742,6 +946,56 @@ class QueryPipeline:
         seed_node_details: list[dict[str, Any]] = []
         retrieved_chunks: list[dict[str, str]] = []
         retrieved_tables: list[dict[str, str]] = []
+        chunk_sources: dict[str, Literal["rag", "graph", "both"]] = {}
+
+        query_vectors: list[Any] = []
+        if vector_store is not None and hasattr(vector_store, "embed_queries"):
+            query_vectors = await asyncio.to_thread(
+                vector_store.embed_queries,
+                search_queries,
+                api_key=api_key,
+            )
+        has_query_vectors = len(query_vectors) == len(search_queries)
+        supports_search_query_vector = (
+            has_query_vectors
+            and "query_vector" in inspect.signature(_search_vector_entries).parameters
+        )
+
+        parallel_web_task: asyncio.Task[WebSearchOutcome] | None = None
+        parallel_web_t0 = 0.0
+        if (
+            effective_allow_web_fallback
+            and has_query_vectors
+            and self.web_search_agent.search_client is not None
+            and self.web_search_agent.search_client.is_configured
+            and hasattr(self.manager.graph, "check_label_coverage")
+        ):
+            label_covered, min_label_score = self.manager.graph.check_label_coverage(
+                query_vectors,
+                threshold=get_settings().web_label_similarity_threshold,
+                api_key=api_key,
+            )
+            if not label_covered:
+                _emit_event(
+                    on_event,
+                    "web_search",
+                    {"enabled": True, "status": "evaluating_sufficiency", "web_sources": []},
+                )
+                parallel_web_t0 = time.perf_counter()
+                parallel_web_task = asyncio.create_task(
+                    self.web_search_agent.run_one_shot_search_async(
+                        request=payload,
+                        search_queries=web_search_queries,
+                        query_vectors=query_vectors if has_query_vectors else None,
+                        session_id=payload.session_id,
+                        client_ip=client_ip,
+                        api_key=api_key,
+                        reason=(
+                            f"Node-label similarity below threshold "
+                            f"({min_label_score:.2f}); parallel 1-shot web search."
+                        ),
+                    )
+                )
 
         if chosen_mode == "rag":
             t0 = time.perf_counter()
@@ -754,8 +1008,13 @@ class QueryPipeline:
                     allowed_doc_ids=allowed_doc_ids,
                     top_k=5,
                     api_key=api_key,
+                    **(
+                        {"query_vector": query_vectors[idx]}
+                        if supports_search_query_vector
+                        else {}
+                    ),
                 )
-                for sq in search_queries
+                for idx, sq in enumerate(search_queries)
             ]
             table_coros = [
                 asyncio.to_thread(
@@ -766,8 +1025,13 @@ class QueryPipeline:
                     allowed_doc_ids=allowed_doc_ids,
                     top_k=3,
                     api_key=api_key,
+                    **(
+                        {"query_vector": query_vectors[idx]}
+                        if supports_search_query_vector
+                        else {}
+                    ),
                 )
-                for sq in search_queries
+                for idx, sq in enumerate(search_queries)
             ]
             all_results = await asyncio.gather(*chunk_coros, *table_coros)
             n_sq = len(search_queries)
@@ -791,6 +1055,12 @@ class QueryPipeline:
                 matched_doc_ids.add(resolved["doc_id"])
                 if len(retrieved_chunks) >= 8:
                     break
+
+            chunk_sources = {
+                chunk["chunk_id"]: "rag"
+                for chunk in retrieved_chunks
+                if chunk.get("chunk_id")
+            }
 
             fused_table_ids = _reciprocal_rank_fusion(table_lists)
             seen_table_ids: set[str] = set()
@@ -825,8 +1095,13 @@ class QueryPipeline:
                     allowed_doc_ids=allowed_doc_ids,
                     top_k=5,
                     api_key=api_key,
+                    **(
+                        {"query_vector": query_vectors[idx]}
+                        if supports_search_query_vector
+                        else {}
+                    ),
                 )
-                for sq in search_queries
+                for idx, sq in enumerate(search_queries)
             ]
             table_coros = [
                 asyncio.to_thread(
@@ -837,9 +1112,18 @@ class QueryPipeline:
                     allowed_doc_ids=allowed_doc_ids,
                     top_k=5,
                     api_key=api_key,
+                    **(
+                        {"query_vector": query_vectors[idx]}
+                        if supports_search_query_vector
+                        else {}
+                    ),
                 )
-                for sq in search_queries
+                for idx, sq in enumerate(search_queries)
             ]
+            supports_seed_query_vector = (
+                has_query_vectors
+                and "query_vector" in inspect.signature(self.manager.graph.find_seed_nodes).parameters
+            )
             node_coros = [
                 asyncio.to_thread(
                     self.manager.graph.find_seed_nodes,
@@ -847,8 +1131,13 @@ class QueryPipeline:
                     top_k=max(payload.top_k_seeds, 5),
                     allowed_doc_ids=allowed_doc_ids,
                     api_key=api_key,
+                    **(
+                        {"query_vector": query_vectors[idx]}
+                        if supports_seed_query_vector
+                        else {}
+                    ),
                 )
-                for sq in search_queries
+                for idx, sq in enumerate(search_queries)
             ]
             all_results = await asyncio.gather(*chunk_coros, *table_coros, *node_coros)
             n_sq = len(search_queries)
@@ -876,12 +1165,24 @@ class QueryPipeline:
                 k_hops=payload.k_hops,
                 allowed_doc_ids=allowed_doc_ids,
             )
-            ranked_edges = _rank_traversed_edges(
+            scored_edges = _rank_traversed_edges(
                 traversed_edges,
                 seed_nodes,
                 payload.query,
                 search_queries,
                 graph=self.manager.graph.graph,
+                include_scores=True,
+            )
+            top_edge_score = scored_edges[0][1] if scored_edges else 0.0
+            qualifying_edges = [
+                edge
+                for edge, score in scored_edges
+                if score > 0.0 and score >= 0.35 * top_edge_score
+            ][:20]
+            ranked_edges = (
+                qualifying_edges
+                if qualifying_edges
+                else [e for e, s in scored_edges[:10] if s > 0.0]
             )
             latencies_ms["k_hop_traversal"] = round((time.perf_counter() - t0) * 1000.0, 3)
             graph_ms = latencies_ms["seed_search"] + latencies_ms["k_hop_traversal"]
@@ -891,19 +1192,47 @@ class QueryPipeline:
             )
 
             t_fuse = time.perf_counter()
-            edge_chunk_ids: list[str] = []
-            for edge in ranked_edges[:10]:
+            fused_chunk_ids = _reciprocal_rank_fusion(chunk_lists)
+            seen_chunk_ids: set[str] = set()
+
+            def _try_add_chunk(entry_id: str) -> bool:
+                resolved = _resolve_chunk_entry(
+                    entry_id,
+                    vector_store=vector_store,
+                    chunk_index=chunk_index,
+                    docs_by_id=docs_by_id,
+                    cleaned_cache=cleaned_cache,
+                )
+                if resolved is None or resolved["chunk_id"] in seen_chunk_ids:
+                    return False
+                seen_chunk_ids.add(resolved["chunk_id"])
+                retrieved_chunks.append(resolved)
+                matched_doc_ids.add(resolved["doc_id"])
+                return True
+
+            # Channel 1: resolve up to 6 core RAG chunks first.
+            rag_idx = 0
+            while rag_idx < len(fused_chunk_ids) and len(retrieved_chunks) < 6:
+                _try_add_chunk(fused_chunk_ids[rag_idx])
+                rag_idx += 1
+
+            # Channel 2 (Pass 1): at most 1 novel chunk per qualifying edge, up to 12 total chunks.
+            for edge in qualifying_edges:
+                if len(retrieved_chunks) >= 12:
+                    break
                 for entry in edge.get("evidence") or []:
                     cid = entry.get("chunk_id")
-                    if cid:
-                        edge_chunk_ids.append(cid)
+                    if not cid or cid in seen_chunk_ids:
+                        continue
+                    if _try_add_chunk(cid):
+                        break
 
-            chunk_rrf_inputs = [*chunk_lists]
-            if edge_chunk_ids:
-                chunk_rrf_inputs.append(edge_chunk_ids)
+            # RAG backfill: ensure at least 8 chunks when available.
+            while rag_idx < len(fused_chunk_ids) and len(retrieved_chunks) < 8:
+                _try_add_chunk(fused_chunk_ids[rag_idx])
+                rag_idx += 1
 
-            fused_chunk_ids = _reciprocal_rank_fusion(chunk_rrf_inputs)
-            seen_chunk_ids: set[str] = set()
+            rag_candidate_ids: set[str] = set()
             for eid in fused_chunk_ids:
                 resolved = _resolve_chunk_entry(
                     eid,
@@ -912,13 +1241,27 @@ class QueryPipeline:
                     docs_by_id=docs_by_id,
                     cleaned_cache=cleaned_cache,
                 )
-                if resolved is None or resolved["chunk_id"] in seen_chunk_ids:
+                if resolved is not None:
+                    rag_candidate_ids.add(resolved["chunk_id"])
+
+            graph_candidate_ids: set[str] = {
+                entry["chunk_id"]
+                for edge in ranked_edges
+                for entry in (edge.get("evidence") or [])
+                if entry.get("chunk_id")
+            }
+            for chunk in retrieved_chunks:
+                cid = chunk.get("chunk_id")
+                if not cid:
                     continue
-                seen_chunk_ids.add(resolved["chunk_id"])
-                retrieved_chunks.append(resolved)
-                matched_doc_ids.add(resolved["doc_id"])
-                if len(retrieved_chunks) >= 8:
-                    break
+                in_rag = cid in rag_candidate_ids
+                in_graph = cid in graph_candidate_ids
+                if in_rag and in_graph:
+                    chunk_sources[cid] = "both"
+                elif in_graph:
+                    chunk_sources[cid] = "graph"
+                else:
+                    chunk_sources[cid] = "rag"
 
             fused_table_ids = _reciprocal_rank_fusion(table_lists)
             seen_table_ids: set[str] = set()
@@ -1074,6 +1417,62 @@ class QueryPipeline:
             if cid and ctext and cid not in chunk_lookup:
                 chunk_lookup[cid] = ctext.strip()
 
+        web_outcome = WebSearchOutcome()
+        web_sources: list[WebSourceRef] = []
+        if parallel_web_task is not None:
+            web_outcome = await parallel_web_task
+            latencies_ms["web_search"] = round((time.perf_counter() - parallel_web_t0) * 1000.0, 3)
+        elif effective_allow_web_fallback:
+            _emit_event(
+                on_event,
+                "web_search",
+                {"enabled": True, "status": "evaluating_sufficiency", "web_sources": []},
+            )
+            t_web = time.perf_counter()
+            web_outcome = await self.web_search_agent.run_decision_and_search_async(
+                request=payload,
+                retrieved_chunks=retrieved_chunks,
+                retrieved_tables=retrieved_tables,
+                seed_node_details=seed_node_details,
+                ranked_edges=ranked_edges,
+                search_queries=web_search_queries,
+                query_vectors=query_vectors if has_query_vectors else None,
+                session_id=payload.session_id,
+                client_ip=client_ip,
+                api_key=api_key,
+            )
+            latencies_ms["web_search"] = round((time.perf_counter() - t_web) * 1000.0, 3)
+
+        if parallel_web_task is not None or effective_allow_web_fallback:
+            web_sources = [
+                WebSourceRef(
+                    result_id=item.result_id,
+                    url=item.url,
+                    title=item.title,
+                    domain=item.domain,
+                    content_type=item.content_type,
+                    tier=item.tier,
+                )
+                for item in web_outcome.selected_evidence
+            ]
+            _emit(
+                on_step,
+                f"[query] Web fallback... done ({latencies_ms['web_search']:.2f} ms, "
+                f"triggered={web_outcome.triggered}, searches={web_outcome.searches_performed}, "
+                f"sources={len(web_sources)})",
+            )
+            _emit_event(
+                on_event,
+                "web_search",
+                {
+                    "enabled": True,
+                    "triggered": web_outcome.triggered,
+                    "sufficient_locally": web_outcome.sufficient_locally,
+                    "searches_performed": web_outcome.searches_performed,
+                    "web_sources": [ws.model_dump() for ws in web_sources],
+                },
+            )
+
         assembled_context = (
             self.answer_agent.build_context_text(
                 request=payload,
@@ -1083,6 +1482,7 @@ class QueryPipeline:
                 seed_node_details=seed_node_details,
                 retrieved_chunks=retrieved_chunks,
                 retrieved_tables=retrieved_tables,
+                web_evidence=web_outcome.selected_evidence,
             )
             if payload.include_trace
             else None
@@ -1097,6 +1497,9 @@ class QueryPipeline:
                 traversed_edges=ranked_edges,
                 matched_doc_ids=sorted(matched_doc_ids),
                 assembled_context=assembled_context,
+                chunk_sources=chunk_sources,
+                web_search_queries=web_outcome.queries_used,
+                web_sources=web_sources,
             )
             if payload.include_trace
             else None
@@ -1117,6 +1520,7 @@ class QueryPipeline:
             retrieved_tables=retrieved_tables,
             chosen_mode=chosen_mode,
             chunk_lookup=chunk_lookup,
+            web_evidence=web_outcome.selected_evidence,
         )
         latencies_ms["answer_synthesis"] = round((time.perf_counter() - t0) * 1000.0, 3)
         latencies_ms["total"] = round((time.perf_counter() - total_t0) * 1000.0, 3)
@@ -1125,11 +1529,20 @@ class QueryPipeline:
             f"[query] Synthesizing answer... done ({latencies_ms['answer_synthesis']:.2f} ms, total={latencies_ms['total']:.2f} ms)",
         )
 
+        total_usage = rewrite_usage.add(web_outcome.usage).add(answer_usage)
+        guard_reachable_final = (
+            web_outcome.guard_reachable
+            if web_outcome.guard_checked and web_outcome.guard_reachable is not None
+            else (guard_res.reachable if guard_res is not None else None)
+        )
         return response.model_copy(
             update={
+                "web_sources": response.web_sources,
+                "used_web_fallback": bool(web_outcome.selected_evidence),
+                "guard_reachable": guard_reachable_final,
                 "metrics": PipelineMetrics(
                     latencies_ms=latencies_ms,
-                    usage=rewrite_usage.add(answer_usage),
-                )
+                    usage=total_usage,
+                ),
             }
         )

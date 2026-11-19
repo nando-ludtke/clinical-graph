@@ -1,0 +1,941 @@
+{
+  "results": [
+    {
+      "id": "web_warfarin_01",
+      "query": "What is the target INR range for warfarin in non-valvular atrial fibrillation vs. mechanical mitral valve replacement according to NHS or NIH guidelines?",
+      "planned_queries": [
+        "warfarin INR target range",
+        "NHS guidelines warfarin atrial fibrillation"
+      ],
+      "findings_count": 5,
+      "selected_count": 3,
+      "guard_checked": true,
+      "guard_blocked_count": 0,
+      "selected_evidence": [
+        {
+          "result_id": "w1",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10914107",
+          "title": "Consensus guidelines for warfarin therapy. Recommendations from the Australasian Society of Thrombosis and Haemostasis.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "Consensus guidelines for warfarin therapy. Recommendations from the Australasian Society of Thrombosis and Haemostasis.\nA S Gallus, R I Baker, B H Chong, P A Ockelford, A M Street\nThe Medical journal of Australia \u00b7 2000-06-19 \u00b7 172(12):600-5 \u00b7 PMID: 10914107\nPublication type: Guideline, Journal Article, Practice Guideline\nAbstract\nThe anticoagulant effect of warfarin should be kept at an international normalised ratio (INR) of about 2.5 (desirable range, 2.0-3.0), although a higher level may be better in a few clinical conditions. The risk of bleeding increases exponentially with INR and becomes clinically unacceptable once the INR exceeds 5.0. Warfarin therapy should be continued for around six weeks for symptomatic calf vein thrombosis, and for 3-6 months after proximal deep vein thrombosis (DVT) that occurs after surgery or limited medical illness. Therapy for six months or longer could be considered for DVT occurring without an obvious precipitating factor, proven recurrent venous thromboembolism (VTE), or if there are continuing risk factors. Oral anticoagulants prevent ischaemic stroke in atrial fibrillation (AF). Maximum efficacy requires an INR > 2.0, but some benefit remains at an INR of 1.5-1.9. Patients aged over 75 years are at greatest risk of intracranial bleeding during warfarin therapy for AF, and the target INR may be reduced to 2.0-2.5, or perhaps as low as 1.5-2.0, in such patients. Warfarin should be withheld if it is more likely to cause major bleeding than to protect from stroke (e.g., in young people with isolated AF where the annual baseline risk of stroke is < 1%). In patients with AF, aspirin is less effective than warfarin (much less effective after such patients have had a stroke or transient cerebral ischaemia). In people with prosthetic heart valves, an INR of 2.5-3.5 is probably sufficient for bileaflet or tilting disc valves, but a higher target INR is necessary for caged ball or caged disc valves. The addition of aspirin (100 mg/day) further decreases the risk of embolism but increases the risk of gastrointestinal bleeding.\nMeSH Terms\nAged\nAged, 80 and over\nAnticoagulants / adverse effects, therapeutic use\nAtrial Fibrillation /"
+          ]
+        },
+        {
+          "result_id": "w2",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12222504",
+          "title": "Appropriate target range of INR and predictive factors of recurrent thrombosis and bleeding in patients with venous thromboembolism on warfarin",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "evidence in Western populations and not Asian populations. Low-intensity warfarin therapy is associated with lower major bleeding and recurrent VTE in patients with a target INR 2.0\u20133.0 in the Asian population9,10. On the other hand, high-intensity warfarin therapy is not more effective than moderate-intensity therapy in preventing recurrent VTE11,12. The specific target INR range may vary depending on the patient\u2019s condition, especially the risk of thrombosis and bleeding.\nAlthough patients with VTE are administered appropriate doses and durations of anticoagulants as per the standard guidelines, approximately 5\u20139% and 1\u20133% of patients experience recurrent VTE and bleeding, respectively, in the first year despite effective warfarin treatment13,14. A factor that helps predict improved treatment efficiency is drug compliance measured by the time in therapeutic range (TTR), which refers to the percentage of time in which INR remains in the target range; accordingly, INR stability can be measured in patients undergoing warfarin therapy. TTR of > 65\u201370% is associated with decreased risks of recurrent VTE and bleeding in patients with VTE15,16.\nMore than 30% of patients with VTE",
+            "The risk of recurrent VTE was comparable across the three target INR ranges. However, a target INR range of 1.5\u20132.5 was associated with a decreased risk of bleeding compared to the other target INR ranges. Smoking was a significant risk factor for VTE recurrence. Transiently provoked VTE and active cancer were significant risk factors of bleeding, while a target range of INR 1.5\u20132.5 with good compliance was a protective factor of bleeding.\nWarfarin is the standard treatment of VTE, particularly in developing countries, due to its superior cost-effectiveness compared to other DOACs4. The efficacy of warfarin is measured by INR levels, which must remain within a narrow therapeutic range to prevent recurrent VTE and bleeding. Current guidelines recommend a target INR of 2.0\u20133.0 for managing VTE in patients taking warfarin6,7, with higher INR levels corresponding to higher risk of bleeding and lower INR corresponding to higher risk of recurrent VTE. In this study, we found that a target INR range of 1.5\u20132.5 was effective in preventing recurrent VTE with minimal bleeding risks. Clinically, a target INR range of 1.5\u20132.5 may be more suitable for patients at high risk of bleeding, whereas",
+            "initiating warfarin and after discontinuing other anticoagulants for at least 1 day. We recorded every INR level of patients receiving warfarin, which was performed in our institute. We recorded the time until warfarin was discontinued or until other anticoagulants were switched during the VTE treatment. The target INR range and interval between INR measurement depended on the physician\u2019s decision. TTR estimates the number of person-days of INR within the therapeutic range divided by the total number of person-days that the patient was on warfarin. We applied the Rosendaal linear interpolation method to calculate TTR in each patient33. The therapeutic range of INR in each patient was categorized according to three groups. We compared three targets of the therapeutic INR range, including 1.5\u20132.5, 2.0\u20133.0, and 2.5\u20133.5, for their efficacy in preventing thrombotic events and reducing the risk of bleeding in each patient. Good compliance was defined as maintaining TTR in each therapeutic range for \u2265 70% of time of warfari"
+          ]
+        },
+        {
+          "result_id": "w3",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5045335",
+          "title": "Recommended Therapeutic INR Range for Patients with Antiphospholipid Syndrome on Warfarin Anticoagulation: Is Moderate-Intensity (INR 2.0 - 3.0) or High-Intensity (INR 3.1 - 4.0) Better for Reducing Risk of Recurrent Thromboembolic Events?",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "time, respectively . In the high-intensity group, the INR was within the range 40% of the time and was above and below range 17% and 43% of the time, respectively . While the objective of Crowther, et al. was to show that high-intensity warfarin was more effective in preventing thrombosis than moderate-intensity warfarin, their data did not support the initial hypothesis. In this study, eight patients had recurrent thrombosis. Out of the 56 patients assigned to high-intensity therapy, six (10.7%) had recurrent thrombotic episodes, such as deep-vein thrombosis, stroke, pulmonary embolism, and myocardial infarctions. Their INR values also ranged from 0.9 to 3.9. Out of the 58 patients assigned moderate-intensity therapy, two had recurrences (3.4%) of deep-vein thrombosis and myocardial infarction, and their INRs had been 2.8 and 1.6, respectively . Results showed that the absolute risk of recurrent thrombosis was low if the target INR of warfarin remained from 2.0 - 3.0.\nThis study had limitations in that there was a higher proportion of women in the moderate-intensity group by chance. The study also was unable to report on warfarin\u2019s effectiveness in the initial three months after"
+          ]
+        }
+      ],
+      "findings": [
+        {
+          "result_id": "w1",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10914107",
+          "title": "Consensus guidelines for warfarin therapy. Recommendations from the Australasian Society of Thrombosis and Haemostasis.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 1 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "Consensus guidelines for warfarin therapy. Recommendations from the Australasian Society of Thrombosis and Haemostasis.\nA S Gallus, R I Baker, B H Chong, P A Ockelford, A M Street\nThe Medical journal of Australia \u00b7 2000-06-19 \u00b7 172(12):600-5 \u00b7 PMID: 10914107\nPublication type: Guideline, Journal Article, Practice Guideline\nAbstract\nThe anticoagulant effect of warfarin should be kept at an international normalised ratio (INR) of about 2.5 (desirable range, 2.0-3.0), although a higher level may be better in a few clinical conditions. The risk of bleeding increases exponentially with INR and becomes clinically unacceptable once the INR exceeds 5.0. Warfarin therapy should be continued for around six weeks for symptomatic calf vein thrombosis, and for 3-6 months after proximal deep vein thrombosis (DVT) that occurs after surgery or limited medical illness. Therapy for six months or longer could be considered for DVT occurring without an obvious precipitating factor, proven recurrent venous thromboembolism (VTE), or if there are continuing risk factors. Oral anticoagulants prevent ischaemic stroke in atrial fibrillation (AF). Maximum efficacy requires an INR > 2.0, but some benefit remains at an INR of 1.5-1.9. Patients aged over 75 years are at greatest risk of intracranial bleeding during warfarin therapy for AF, and the target INR may be reduced to 2.0-2.5, or perhaps as low as 1.5-2.0, in such patients. Warfarin should be withheld if it is more likely to cause major bleeding than to protect from stroke (e.g., in young people with isolated AF where the annual baseline risk of stroke is < 1%). In patients with AF, aspirin is less effective than warfarin (much less effective after such patients have had a stroke or transient cerebral ischaemia). In people with prosthetic heart valves, an INR of 2.5-3.5 is probably sufficient for bileaflet or tilting disc valves, but a higher target INR is necessary for caged ball or caged disc valves. The addition of aspirin (100 mg/day) further decreases the risk of embolism but increases the risk of gastrointestinal bleeding.\nMeSH Terms\nAged\nAged, 80 and over\nAnticoagulants / adverse effects, therapeutic use\nAtrial Fibrillation /"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w2",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12222504",
+          "title": "Appropriate target range of INR and predictive factors of recurrent thrombosis and bleeding in patients with venous thromboembolism on warfarin",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 3 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "evidence in Western populations and not Asian populations. Low-intensity warfarin therapy is associated with lower major bleeding and recurrent VTE in patients with a target INR 2.0\u20133.0 in the Asian population9,10. On the other hand, high-intensity warfarin therapy is not more effective than moderate-intensity therapy in preventing recurrent VTE11,12. The specific target INR range may vary depending on the patient\u2019s condition, especially the risk of thrombosis and bleeding.\nAlthough patients with VTE are administered appropriate doses and durations of anticoagulants as per the standard guidelines, approximately 5\u20139% and 1\u20133% of patients experience recurrent VTE and bleeding, respectively, in the first year despite effective warfarin treatment13,14. A factor that helps predict improved treatment efficiency is drug compliance measured by the time in therapeutic range (TTR), which refers to the percentage of time in which INR remains in the target range; accordingly, INR stability can be measured in patients undergoing warfarin therapy. TTR of > 65\u201370% is associated with decreased risks of recurrent VTE and bleeding in patients with VTE15,16.\nMore than 30% of patients with VTE",
+            "The risk of recurrent VTE was comparable across the three target INR ranges. However, a target INR range of 1.5\u20132.5 was associated with a decreased risk of bleeding compared to the other target INR ranges. Smoking was a significant risk factor for VTE recurrence. Transiently provoked VTE and active cancer were significant risk factors of bleeding, while a target range of INR 1.5\u20132.5 with good compliance was a protective factor of bleeding.\nWarfarin is the standard treatment of VTE, particularly in developing countries, due to its superior cost-effectiveness compared to other DOACs4. The efficacy of warfarin is measured by INR levels, which must remain within a narrow therapeutic range to prevent recurrent VTE and bleeding. Current guidelines recommend a target INR of 2.0\u20133.0 for managing VTE in patients taking warfarin6,7, with higher INR levels corresponding to higher risk of bleeding and lower INR corresponding to higher risk of recurrent VTE. In this study, we found that a target INR range of 1.5\u20132.5 was effective in preventing recurrent VTE with minimal bleeding risks. Clinically, a target INR range of 1.5\u20132.5 may be more suitable for patients at high risk of bleeding, whereas",
+            "initiating warfarin and after discontinuing other anticoagulants for at least 1 day. We recorded every INR level of patients receiving warfarin, which was performed in our institute. We recorded the time until warfarin was discontinued or until other anticoagulants were switched during the VTE treatment. The target INR range and interval between INR measurement depended on the physician\u2019s decision. TTR estimates the number of person-days of INR within the therapeutic range divided by the total number of person-days that the patient was on warfarin. We applied the Rosendaal linear interpolation method to calculate TTR in each patient33. The therapeutic range of INR in each patient was categorized according to three groups. We compared three targets of the therapeutic INR range, including 1.5\u20132.5, 2.0\u20133.0, and 2.5\u20133.5, for their efficacy in preventing thrombotic events and reducing the risk of bleeding in each patient. Good compliance was defined as maintaining TTR in each therapeutic range for \u2265 70% of time of warfari"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w3",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5045335",
+          "title": "Recommended Therapeutic INR Range for Patients with Antiphospholipid Syndrome on Warfarin Anticoagulation: Is Moderate-Intensity (INR 2.0 - 3.0) or High-Intensity (INR 3.1 - 4.0) Better for Reducing Risk of Recurrent Thromboembolic Events?",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 1 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "time, respectively . In the high-intensity group, the INR was within the range 40% of the time and was above and below range 17% and 43% of the time, respectively . While the objective of Crowther, et al. was to show that high-intensity warfarin was more effective in preventing thrombosis than moderate-intensity warfarin, their data did not support the initial hypothesis. In this study, eight patients had recurrent thrombosis. Out of the 56 patients assigned to high-intensity therapy, six (10.7%) had recurrent thrombotic episodes, such as deep-vein thrombosis, stroke, pulmonary embolism, and myocardial infarctions. Their INR values also ranged from 0.9 to 3.9. Out of the 58 patients assigned moderate-intensity therapy, two had recurrences (3.4%) of deep-vein thrombosis and myocardial infarction, and their INRs had been 2.8 and 1.6, respectively . Results showed that the absolute risk of recurrent thrombosis was low if the target INR of warfarin remained from 2.0 - 3.0.\nThis study had limitations in that there was a higher proportion of women in the moderate-intensity group by chance. The study also was unable to report on warfarin\u2019s effectiveness in the initial three months after"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w4",
+          "url": "https://sps.nhs.uk/monitorings/warfarin-monitoring",
+          "title": "Warfarin monitoring \u2013 NHS SPS - Specialist Pharmacy Service \u2013 The first stop for professional medicines advice",
+          "domain": "sps.nhs.uk",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w5",
+          "url": "https://www.nice.org.uk/guidance/ta275/documents/stroke-and-systemic-embolism-prevention-nonvalvular-atrial-fibrillation-apixaban-royal-college-of-physicians-and-british-society-of-haematology2",
+          "title": "Appendix G -Professional organisation statement template - NICE",
+          "domain": "nice.org.uk",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        }
+      ],
+      "stage_latencies_ms": {
+        "rewrite_ms": 1746.57,
+        "tavily_ms": 748.86,
+        "fetch_fallback_ms": 0.0,
+        "audit_ms": 1125.57,
+        "guard_ms": 1.01,
+        "total_ms": 3835.94
+      },
+      "latency_ms": 3835.94,
+      "tokens": 0
+    },
+    {
+      "id": "web_amoxclav_02",
+      "query": "What are the renal dosing adjustments for amoxicillin-clavulanate in patients with creatinine clearance below 30 mL/min?",
+      "planned_queries": [
+        "amoxicillin-clavulanate renal dosing",
+        "creatinine clearance dosing adjustments"
+      ],
+      "findings_count": 6,
+      "selected_count": 3,
+      "guard_checked": true,
+      "guard_blocked_count": 0,
+      "selected_evidence": [
+        {
+          "result_id": "w1",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/fda/fdaDrugXsl.cfm?setid=70c5dcb1-ebad-4297-a3bd-88ab5a70d86c",
+          "title": "AMOXICILLIN AND CLAVULANATE POTASSIUM",
+          "domain": "dailymed.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "in the conditions listed below\\:\nDOSAGE & ADMINISTRATION SECTION\nAmoxicillin and clavulanate potassium tablets may be taken without regard to meals; however, absorption of clavulanate potassium is enhanced when amoxicillin and clavulanate potassium tablets are administered at the start of a meal. To minimize the potential for gastrointestinal intolerance, amoxicillin and clavulanate potassium tablets should be taken at the start of a meal.\nThe usual adult dose is one amoxicillin and clavulanate potassium tablet 500 mg/125 mg every 12 hours or one amoxicillin and clavulanate potassium tablet 250 mg/125 mg every 8 hours. For more severe infections and infections of the respiratory tract, the dose should be one amoxicillin and clavulanate potassium tablet 875 mg/125 mg every 12 hours or one amoxicillin and clavulanate potassium tablet 500 mg/125 mg every 8 hours. Adults who have difficulty swallowing may be given the 125 mg/31.25 mg per 5 mL or 250 mg/62.5 mg per 5 mL suspension in place of the 500 mg/125 mg tablet. The 200 mg/28.5 mg per 5 mL suspension or the 400 mg/57 mg per 5 mL suspension may be used in place of the 875 mg/125 mg tablet.  \nTwo amoxicillin and clavulanate",
+            "be used until the child weighs at least 40 kg, due to the different amoxicillin to clavulanic acid ratios in the amoxicillin and clavulanate potassium tablet 250 mg/125 mg versus the amoxicillin and clavulanate potassium chewable tablet 250 mg/62.5 mg.\nPatients with impaired renal function do not generally require a reduction in dose unless the impairment is severe. Renal impairment patients with a glomerular filtration rate of <30 mL/min should not receive the amoxicillin and clavulanate potassium tablets 875 mg/125 mg dose. Patients with a glomerular filtration rate of 10 to 30 mL/min should receive amoxicillin and clavulanate potassium tablets 500 mg/125 mg or 250 mg/125 mg every 12 hours, depending on the severity of the infection. Patients with a glomerular filtration rate less than 10 mL/min should receive amoxicillin and clavulanate potassium tablets 500 mg/125 mg or 250 mg/125 mg every 24 hours, depending on severity of the infection.  \nHemodialysis patients should receive amoxicillin and clavulanate potassium tablets 500 mg/125 mg or 250 mg/125 mg every 24 hours, depending on severity of the infection. They should receive an additional dose both during and at the end of",
+            "function. Because elderly patients are more likely to have decreased renal function, care should be taken in dose selection, and it may be useful to monitor renal function.\nAmoxicillin is primarily eliminated by the kidney and dosage adjustment is usually required in patients with severe renal impairment (GFR <30 mL/min). See Patients with Renal Impairment (2.3) for specific recommendations in patients with renal impairment.\nOVERDOSAGE SECTION\nIn case of overdosage, discontinue medication, treat symptomatically, and institute supportive measures as required. A prospective study of 51 pediatric patients at a poison-control center suggested that overdosages of less than 250 mg/kg of amoxicillin are not associated with significant clinical symptoms1.\nInterstitial nephritis resulting in oliguric renal failure has been reported in patients after overdosage with amoxicillin and clavulanate potassium.\nCrystalluria, in some cases leading to renal failure, has also been reported after amoxicillin and clavulanate potassium overdosage in adult and pediatric patients. In case of overdosage, adequate fluid intake and diuresis should be maintained to reduce the risk of amoxicillin and"
+          ]
+        },
+        {
+          "result_id": "w2",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=174cc098-fe49-4f1a-87e2-601c7573f0db",
+          "title": "DailyMed - AUGMENTIN- amoxicillin and clavulanate potassium tablet, film coated\nAUGMENTIN- amoxicillin and clavulanate potassium powder, for suspension",
+          "domain": "dailymed.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "than 10 mL/min should receive 500 mg or 250 mg every 24 hours, depending on severity of the infection.\nHemodialysis patients should receive 500 mg or 250 mg every 24 hours,depending on severity of the infection. They should receive an additional dose both during and at the end of dialysis.\n2.4 Directions for Mixing Oral Suspension\nPrepare a suspension at time of dispensing as follows: Tap bottle until all the powder flows freely. Add approximately 2/3 of the total amount of water for reconstitution (see Table 2 below) and shake vigorously to suspend powder. Add remainder of the water and again shake vigorously.\nTable 2: Amount of Water for Mixing Oral Suspension\n|  |  |  |  |\n ---  --- |\n| Strength | Bottle Size | Amount of Waterfor Reconstitution | Contents of EachTeaspoonful (5 mL) |\n| 125 mg/5 mL | 75 mL100 mL150 mL | 67 mL90 mL134 mL | 125 mg amoxicillin and 31.25 mg of clavulanic acid as the potassium salt |\n| 200 mg/5 mL | 50 mL75 mL100 mL | 50 mL75 mL95 mL | 200 mg amoxicillin and 28.5 mg of clavulanic acid as the potassium salt |\n| 250 mg/5 mL | 75 mL100 mL150 mL | 65 mL87 mL130 mL | 250 mg amoxicillin and 62.5 mg of clavulanic acid as the potassium salt |\n| 400 mg/5 mL |",
+            "renal function, care should be taken in dose selection, and it may be useful to monitor renal function.\n8.6 Dosing in Renal Impairment\nAmoxicillin is primarily eliminated by the kidney and dosage adjustment is usually required in patients with severe renal impairment (GFR <30 mL/min). See Patients with Renal Impairment (2.3) for specific recommendations in patients with renal impairment.\nIn case of overdosage, discontinue medication, treat symptomatically, and institute supportive measures as required.  A prospective study of 51 pediatric patients at a poison-control center suggested that overdosages of less than 250 mg/kg of amoxicillin are not associated with significant clinical symptoms1.\nInterstitial nephritis resulting in oliguric renal failure has been reported in patients after overdosage with amoxicillin/clavulanate potassium.\nCrystalluria, in some cases leading to renal failure, has also been reported after amoxicillin/clavulanate potassium overdosage in adult and pe"
+          ]
+        },
+        {
+          "result_id": "w3",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4604416",
+          "title": "Augmented Renal Clearance Implies a Need for Increased Amoxicillin-Clavulanic Acid Dosing in Critically Ill Children",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "from 50 patients (median age, 2.58 years; age range, 1 month to 15 years) treated with amoxicillin and clavulanic acid, respectively. A three-compartment model for amoxicillin and a two-compartment model for clavulanic acid best described the data, in which allometric weight scaling and maturation functions were added a priori to scale for size and age. In addition, plasma cystatin C and concomitant treatment with vasopressors were identified to have a significant influence on amoxicillin clearance. The typical population values of clearance for amoxicillin and clavulanic acid were 17.97 liters/h/70 kg and 12.20 liters/h/70 kg, respectively. In 32% of the treated patients, amoxicillin-clavulanic acid therapy was stopped prematurely due to clinical failure, and the patient was switched to broader-spectrum antibiotic treatment. Monte Carlo simulations demonstrated that four-hourly dosing of 25 mg/kg was required to achieve the therapeutic target for both amoxicillin and clavulanic acid. For patients with augmented renal function, a 1-h infusion was preferable to bolus dosing. Current published dosing regimens result in subtherapeutic concentrations in the early period of sepsis due"
+          ]
+        }
+      ],
+      "findings": [
+        {
+          "result_id": "w1",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/fda/fdaDrugXsl.cfm?setid=70c5dcb1-ebad-4297-a3bd-88ab5a70d86c",
+          "title": "AMOXICILLIN AND CLAVULANATE POTASSIUM",
+          "domain": "dailymed.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 3 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "in the conditions listed below\\:\nDOSAGE & ADMINISTRATION SECTION\nAmoxicillin and clavulanate potassium tablets may be taken without regard to meals; however, absorption of clavulanate potassium is enhanced when amoxicillin and clavulanate potassium tablets are administered at the start of a meal. To minimize the potential for gastrointestinal intolerance, amoxicillin and clavulanate potassium tablets should be taken at the start of a meal.\nThe usual adult dose is one amoxicillin and clavulanate potassium tablet 500 mg/125 mg every 12 hours or one amoxicillin and clavulanate potassium tablet 250 mg/125 mg every 8 hours. For more severe infections and infections of the respiratory tract, the dose should be one amoxicillin and clavulanate potassium tablet 875 mg/125 mg every 12 hours or one amoxicillin and clavulanate potassium tablet 500 mg/125 mg every 8 hours. Adults who have difficulty swallowing may be given the 125 mg/31.25 mg per 5 mL or 250 mg/62.5 mg per 5 mL suspension in place of the 500 mg/125 mg tablet. The 200 mg/28.5 mg per 5 mL suspension or the 400 mg/57 mg per 5 mL suspension may be used in place of the 875 mg/125 mg tablet.  \nTwo amoxicillin and clavulanate",
+            "be used until the child weighs at least 40 kg, due to the different amoxicillin to clavulanic acid ratios in the amoxicillin and clavulanate potassium tablet 250 mg/125 mg versus the amoxicillin and clavulanate potassium chewable tablet 250 mg/62.5 mg.\nPatients with impaired renal function do not generally require a reduction in dose unless the impairment is severe. Renal impairment patients with a glomerular filtration rate of <30 mL/min should not receive the amoxicillin and clavulanate potassium tablets 875 mg/125 mg dose. Patients with a glomerular filtration rate of 10 to 30 mL/min should receive amoxicillin and clavulanate potassium tablets 500 mg/125 mg or 250 mg/125 mg every 12 hours, depending on the severity of the infection. Patients with a glomerular filtration rate less than 10 mL/min should receive amoxicillin and clavulanate potassium tablets 500 mg/125 mg or 250 mg/125 mg every 24 hours, depending on severity of the infection.  \nHemodialysis patients should receive amoxicillin and clavulanate potassium tablets 500 mg/125 mg or 250 mg/125 mg every 24 hours, depending on severity of the infection. They should receive an additional dose both during and at the end of",
+            "function. Because elderly patients are more likely to have decreased renal function, care should be taken in dose selection, and it may be useful to monitor renal function.\nAmoxicillin is primarily eliminated by the kidney and dosage adjustment is usually required in patients with severe renal impairment (GFR <30 mL/min). See Patients with Renal Impairment (2.3) for specific recommendations in patients with renal impairment.\nOVERDOSAGE SECTION\nIn case of overdosage, discontinue medication, treat symptomatically, and institute supportive measures as required. A prospective study of 51 pediatric patients at a poison-control center suggested that overdosages of less than 250 mg/kg of amoxicillin are not associated with significant clinical symptoms1.\nInterstitial nephritis resulting in oliguric renal failure has been reported in patients after overdosage with amoxicillin and clavulanate potassium.\nCrystalluria, in some cases leading to renal failure, has also been reported after amoxicillin and clavulanate potassium overdosage in adult and pediatric patients. In case of overdosage, adequate fluid intake and diuresis should be maintained to reduce the risk of amoxicillin and"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w2",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=174cc098-fe49-4f1a-87e2-601c7573f0db",
+          "title": "DailyMed - AUGMENTIN- amoxicillin and clavulanate potassium tablet, film coated\nAUGMENTIN- amoxicillin and clavulanate potassium powder, for suspension",
+          "domain": "dailymed.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 2 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "than 10 mL/min should receive 500 mg or 250 mg every 24 hours, depending on severity of the infection.\nHemodialysis patients should receive 500 mg or 250 mg every 24 hours,depending on severity of the infection. They should receive an additional dose both during and at the end of dialysis.\n2.4 Directions for Mixing Oral Suspension\nPrepare a suspension at time of dispensing as follows: Tap bottle until all the powder flows freely. Add approximately 2/3 of the total amount of water for reconstitution (see Table 2 below) and shake vigorously to suspend powder. Add remainder of the water and again shake vigorously.\nTable 2: Amount of Water for Mixing Oral Suspension\n|  |  |  |  |\n ---  --- |\n| Strength | Bottle Size | Amount of Waterfor Reconstitution | Contents of EachTeaspoonful (5 mL) |\n| 125 mg/5 mL | 75 mL100 mL150 mL | 67 mL90 mL134 mL | 125 mg amoxicillin and 31.25 mg of clavulanic acid as the potassium salt |\n| 200 mg/5 mL | 50 mL75 mL100 mL | 50 mL75 mL95 mL | 200 mg amoxicillin and 28.5 mg of clavulanic acid as the potassium salt |\n| 250 mg/5 mL | 75 mL100 mL150 mL | 65 mL87 mL130 mL | 250 mg amoxicillin and 62.5 mg of clavulanic acid as the potassium salt |\n| 400 mg/5 mL |",
+            "renal function, care should be taken in dose selection, and it may be useful to monitor renal function.\n8.6 Dosing in Renal Impairment\nAmoxicillin is primarily eliminated by the kidney and dosage adjustment is usually required in patients with severe renal impairment (GFR <30 mL/min). See Patients with Renal Impairment (2.3) for specific recommendations in patients with renal impairment.\nIn case of overdosage, discontinue medication, treat symptomatically, and institute supportive measures as required.  A prospective study of 51 pediatric patients at a poison-control center suggested that overdosages of less than 250 mg/kg of amoxicillin are not associated with significant clinical symptoms1.\nInterstitial nephritis resulting in oliguric renal failure has been reported in patients after overdosage with amoxicillin/clavulanate potassium.\nCrystalluria, in some cases leading to renal failure, has also been reported after amoxicillin/clavulanate potassium overdosage in adult and pe"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w3",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4604416",
+          "title": "Augmented Renal Clearance Implies a Need for Increased Amoxicillin-Clavulanic Acid Dosing in Critically Ill Children",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 1 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "from 50 patients (median age, 2.58 years; age range, 1 month to 15 years) treated with amoxicillin and clavulanic acid, respectively. A three-compartment model for amoxicillin and a two-compartment model for clavulanic acid best described the data, in which allometric weight scaling and maturation functions were added a priori to scale for size and age. In addition, plasma cystatin C and concomitant treatment with vasopressors were identified to have a significant influence on amoxicillin clearance. The typical population values of clearance for amoxicillin and clavulanic acid were 17.97 liters/h/70 kg and 12.20 liters/h/70 kg, respectively. In 32% of the treated patients, amoxicillin-clavulanic acid therapy was stopped prematurely due to clinical failure, and the patient was switched to broader-spectrum antibiotic treatment. Monte Carlo simulations demonstrated that four-hourly dosing of 25 mg/kg was required to achieve the therapeutic target for both amoxicillin and clavulanic acid. For patients with augmented renal function, a 1-h infusion was preferable to bolus dosing. Current published dosing regimens result in subtherapeutic concentrations in the early period of sepsis due"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w4",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13302346",
+          "title": "Renal Dose Adjustment in European Primary Care: Clinical Nuances and Practical Challenges",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w5",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/17555141",
+          "title": "Drug dosing adjustments in patients with chronic kidney disease.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w6",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6463404",
+          "title": "Evaluation of renal drug dosing adjustment in chronic kidney disease patients at two university hospitals in Lebanon",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        }
+      ],
+      "stage_latencies_ms": {
+        "rewrite_ms": 1964.83,
+        "tavily_ms": 753.25,
+        "fetch_fallback_ms": 0.0,
+        "audit_ms": 1315.72,
+        "guard_ms": 0.98,
+        "total_ms": 4211.88
+      },
+      "latency_ms": 4211.88,
+      "tokens": 0
+    },
+    {
+      "id": "web_preeclampsia_03",
+      "query": "What is the NICE or ACOG recommended magnesium sulfate loading and maintenance regimen for severe preeclampsia?",
+      "planned_queries": [
+        "magnesium sulfate dosing preeclampsia",
+        "NICE guidelines magnesium sulfate"
+      ],
+      "findings_count": 6,
+      "selected_count": 4,
+      "guard_checked": true,
+      "guard_blocked_count": 0,
+      "selected_evidence": [
+        {
+          "result_id": "w1",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10803454",
+          "title": "Magnesium sulfate in eclampsia and pre-eclampsia: pharmacokinetic principles.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "Magnesium sulfate in eclampsia and pre-eclampsia: pharmacokinetic principles.\nJ F Lu, C H Nightingale\nClinical pharmacokinetics \u00b7 2000-04-01 \u00b7 38(4):305-14 \u00b7 DOI: 10.2165/00003088-200038040-00002 \u00b7 PMID: 10803454\nPublication type: Journal Article, Review\nAbstract\nMagnesium sulfate (MgSO4) is the agent most commonly used for treatment of eclampsia and prophylaxis of eclampsia in patients with severe pre-eclampsia. It is usually given by either the intramuscular or intravenous routes. The intramuscular regimen is most commonly a 4 g intravenous loading dose, immediately followed by 10 g intramuscularly and then by 5 g intramuscularly every 4 hours in alternating buttocks. The intravenous regimen is given as a 4 g dose, followed by a maintenance infusion of 1 to 2 g/h by controlled infusion pump. After administration, about 40% of plasma magnesium is protein bound. The unbound magnesium ion diffuses into the extravascular-extracellular space, into bone, and across the placenta and fetal membranes and into the fetus and amniotic fluid. In pregnant women, apparent volumes of distribution usually reach constant values between the third and fourth hours after administration, and range"
+          ]
+        },
+        {
+          "result_id": "w2",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7680383",
+          "title": "Alternate Dosing Protocol for Magnesium Sulfate in Obese Women With Preeclampisa: A Randomized Controlled Trial",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "of at least 4.8 mg/dL) in obese women with preeclampsia.\nClinical Trial Registration:\nClinicalTrials.gov, NCT02835339.\nPrecis\nA magnesium sulfate regimen of 6g intravenous loading followed by 2g/hr maintenance dose more reliably achieves a therapeutic serum magnesium concentration in obese women with preeclampsia.\nIntroduction\nRetrospective studies by Pritchard and Chelsey evaluated serum magnesium concentrations in women receiving intramuscular (IM) magnesium sulfate who experienced eclamptic seizures. These studies suggested a therapeutic range for serum magnesium of 4.8 \u2013 8.4 mg/dL.1,2 This therapeutic range was also supported by a study by Sibai et al.3\nIn a pharmacokinetic model, we demonstrated that in women receiving a 4g IV loading dose, followed by a 2g/hr IV maintenance dose, obese women take approximately twice as long as women of the mean body weight in the sample to achieve these previously accepted therapeutic serum magnesium concentrations.4 Therefore, the aim of the current study was to prospectively validate our pharmacokinetic model that suggested dosing alterations are needed based on BMI.\nMethods\nIn this prospective, randomized controlled trial we enrolled",
+            "for women with preeclampsia: a population pharmacokinetic exposure-response modeling and simulation study. J Clin Pharmacol 2019; 59: 1519 \u2013 26. PMID:31157410 doi:10.1002/jcph.1448 PMCID:PMC6790709\n9. Okusanya BO, Oladapo OT, Long Q, Lumbiganon P, Carroli G, Qureshi Z, et al. Clinical pharmacokinetic properties of magnesium sulfate in women with pre-eclampsia and eclampsia. BJOG. 2016; 123 (3): 356 \u2013 66. PMID:26599617 doi:10.1111/1471-0528.13753 PMCID:PMC4737322\n10. Chuan FS, Charles BG, Boyle RK et al. Population pharmacokinetics of magnesium in preeclampsia. Am J Obstet Gynecol 2001; 185: 593 \u2013 9. PMID:11568783 doi:10.1067/mob.2001.116726\n11. Lu J, Pfister M, Ferrari P et al. Pharmacokinetic-pharmacodynamic modeling of magnesium plasma concentration and blood pressure in preeclamptic women. Clin Pharmacokinet 2002; 41: 1105 \u2013 1113. PMID:12403646 doi:10.2165/00003088-200241130-00007\n12. Salinger D, Mundle S,. Regi A, Bracken H, Winikoff B, Vicini P, Easterling T. Magnesium sulfate for prevention of eclampsia: are intramuscular and intravenous regimens equivalent? A population pharmacokinetic study. BJOG 2013; 120: 894 \u2013 900. PMID:23530757 doi:10.1111/1471-0528.12222\n13. The Magpie Trial Collaborative Group. Do women with pre-eclampsia, and their babies, benefit from magnesium sulfate? The Magpie Trial: a randomised placebo-controlled trial. Lancet. 2002; 359 (9321): 1877 \u2013 90. PMID:12057549 doi:10.1016/s0140-6736(02)08778-0\n14. Dayicioglu V, Sahinoglu Z, Kol E, Kucukbas M. The use of standard dose of magnesium sulfate in prophylaxis of eclamptic seizures: do body mass index alterations have any effect on success? Hypertens Pregnancy 2003; 22: 257 \u2013 65. PMID:14572362 doi:10.1081/PRG-120024029\n15. Long Q, Oladapo OT, Leathersich S, Vogel JP, Carroli G, Lumbiganon P, et al. Clinical practice patterns on the use of magnesium sulphate for treatment of pre-eclampsia and eclampsia: a multi-country survey. BJOG. 2017; 124 (12): 1883 \u2013 90. PMID:27885772 doi:10.1111/1471-0528.14400 PMCID:PMC5697690"
+          ]
+        },
+        {
+          "result_id": "w3",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33156201",
+          "title": "Alternate Dosing Protocol for Magnesium Sulfate in Obese Women With Preeclampsia: A Randomized Controlled Trial.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "The alternate dosing regimen of a 6-g IV loading dose followed by a 2-g/h IV maintenance dose more reliably achieves therapeutic serum magnesium concentrations (as defined by a concentration of at least 4.8 mg/dL) in obese women with preeclampsia.\nClinical Trial Registration\nClinicalTrials.gov, NCT02835339.\nMeSH Terms\nAdult\nBody Mass Index\nDrug Administration Schedule\nFemale\nHumans\nInfusions, Intravenous\nMagnesium Sulfate / administration & dosage, blood\nObesity / complications\nPre-Eclampsia / drug therapy, prevention & control\nPregnancy\nSeizures / complications, prevention & control\nSeverity of Illness Index\nYoung Adult"
+          ]
+        },
+        {
+          "result_id": "w6",
+          "url": "https://www.nice.org.uk/guidance/ng133/resources/criteria-for-choice-of-critical-care-level-hypertension-preeclampsia-and-eclampsia-pdf-8720711396",
+          "title": "criteria for choice of critical care level (hypertension, pre-eclampsia ...",
+          "domain": "nice.org.uk",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "alternatives to magnesium sulfate in women with eclampsia.\nRegimen for magnesium sulfate \u2022 Loading dose of 4 g given intravenously over 5 to 15 minutes, followed by infusion of 1 g/hour for 24 hours \u2022 Further dose of 2 to 4 g given over 5 to 15 minutes if recurrent seizures Information Nifedipine: at the time of publication (June 2019), some brands of nifedipine were specifically contraindicated during pregnancy by the manufacturer in its summary of product characteristics (SPC). Refer to the individual SPCs for each preparation of nifedipine for further details.\nMagnesium sulfate regimen: also see The Eclampsia Trial Collaborative Group (1995) Which anticonvulsant for women with eclampsia? Evidence from the Collaborative Eclampsia Trial. Lancet 345:1455\u20131463.\nThe MHRA has issued a warning about the risk of skeletal adverse effects in the neonate following prolonged or repeated use of magnesium sulfate in pregnancy. Maternal administration of magnesium sulfate for longer than 5 to 7 days in pregnancy has been associated with skeletal adverse effects and hypocalcaemia and hypermagnesemia in neonates. If use of magnesium sulfate in pregnancy is prolonged or repeated, consider"
+          ]
+        }
+      ],
+      "findings": [
+        {
+          "result_id": "w1",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/10803454",
+          "title": "Magnesium sulfate in eclampsia and pre-eclampsia: pharmacokinetic principles.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 1 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "Magnesium sulfate in eclampsia and pre-eclampsia: pharmacokinetic principles.\nJ F Lu, C H Nightingale\nClinical pharmacokinetics \u00b7 2000-04-01 \u00b7 38(4):305-14 \u00b7 DOI: 10.2165/00003088-200038040-00002 \u00b7 PMID: 10803454\nPublication type: Journal Article, Review\nAbstract\nMagnesium sulfate (MgSO4) is the agent most commonly used for treatment of eclampsia and prophylaxis of eclampsia in patients with severe pre-eclampsia. It is usually given by either the intramuscular or intravenous routes. The intramuscular regimen is most commonly a 4 g intravenous loading dose, immediately followed by 10 g intramuscularly and then by 5 g intramuscularly every 4 hours in alternating buttocks. The intravenous regimen is given as a 4 g dose, followed by a maintenance infusion of 1 to 2 g/h by controlled infusion pump. After administration, about 40% of plasma magnesium is protein bound. The unbound magnesium ion diffuses into the extravascular-extracellular space, into bone, and across the placenta and fetal membranes and into the fetus and amniotic fluid. In pregnant women, apparent volumes of distribution usually reach constant values between the third and fourth hours after administration, and range"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w2",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7680383",
+          "title": "Alternate Dosing Protocol for Magnesium Sulfate in Obese Women With Preeclampisa: A Randomized Controlled Trial",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 2 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "of at least 4.8 mg/dL) in obese women with preeclampsia.\nClinical Trial Registration:\nClinicalTrials.gov, NCT02835339.\nPrecis\nA magnesium sulfate regimen of 6g intravenous loading followed by 2g/hr maintenance dose more reliably achieves a therapeutic serum magnesium concentration in obese women with preeclampsia.\nIntroduction\nRetrospective studies by Pritchard and Chelsey evaluated serum magnesium concentrations in women receiving intramuscular (IM) magnesium sulfate who experienced eclamptic seizures. These studies suggested a therapeutic range for serum magnesium of 4.8 \u2013 8.4 mg/dL.1,2 This therapeutic range was also supported by a study by Sibai et al.3\nIn a pharmacokinetic model, we demonstrated that in women receiving a 4g IV loading dose, followed by a 2g/hr IV maintenance dose, obese women take approximately twice as long as women of the mean body weight in the sample to achieve these previously accepted therapeutic serum magnesium concentrations.4 Therefore, the aim of the current study was to prospectively validate our pharmacokinetic model that suggested dosing alterations are needed based on BMI.\nMethods\nIn this prospective, randomized controlled trial we enrolled",
+            "for women with preeclampsia: a population pharmacokinetic exposure-response modeling and simulation study. J Clin Pharmacol 2019; 59: 1519 \u2013 26. PMID:31157410 doi:10.1002/jcph.1448 PMCID:PMC6790709\n9. Okusanya BO, Oladapo OT, Long Q, Lumbiganon P, Carroli G, Qureshi Z, et al. Clinical pharmacokinetic properties of magnesium sulfate in women with pre-eclampsia and eclampsia. BJOG. 2016; 123 (3): 356 \u2013 66. PMID:26599617 doi:10.1111/1471-0528.13753 PMCID:PMC4737322\n10. Chuan FS, Charles BG, Boyle RK et al. Population pharmacokinetics of magnesium in preeclampsia. Am J Obstet Gynecol 2001; 185: 593 \u2013 9. PMID:11568783 doi:10.1067/mob.2001.116726\n11. Lu J, Pfister M, Ferrari P et al. Pharmacokinetic-pharmacodynamic modeling of magnesium plasma concentration and blood pressure in preeclamptic women. Clin Pharmacokinet 2002; 41: 1105 \u2013 1113. PMID:12403646 doi:10.2165/00003088-200241130-00007\n12. Salinger D, Mundle S,. Regi A, Bracken H, Winikoff B, Vicini P, Easterling T. Magnesium sulfate for prevention of eclampsia: are intramuscular and intravenous regimens equivalent? A population pharmacokinetic study. BJOG 2013; 120: 894 \u2013 900. PMID:23530757 doi:10.1111/1471-0528.12222\n13. The Magpie Trial Collaborative Group. Do women with pre-eclampsia, and their babies, benefit from magnesium sulfate? The Magpie Trial: a randomised placebo-controlled trial. Lancet. 2002; 359 (9321): 1877 \u2013 90. PMID:12057549 doi:10.1016/s0140-6736(02)08778-0\n14. Dayicioglu V, Sahinoglu Z, Kol E, Kucukbas M. The use of standard dose of magnesium sulfate in prophylaxis of eclamptic seizures: do body mass index alterations have any effect on success? Hypertens Pregnancy 2003; 22: 257 \u2013 65. PMID:14572362 doi:10.1081/PRG-120024029\n15. Long Q, Oladapo OT, Leathersich S, Vogel JP, Carroli G, Lumbiganon P, et al. Clinical practice patterns on the use of magnesium sulphate for treatment of pre-eclampsia and eclampsia: a multi-country survey. BJOG. 2017; 124 (12): 1883 \u2013 90. PMID:27885772 doi:10.1111/1471-0528.14400 PMCID:PMC5697690"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w3",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/33156201",
+          "title": "Alternate Dosing Protocol for Magnesium Sulfate in Obese Women With Preeclampsia: A Randomized Controlled Trial.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 1 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "The alternate dosing regimen of a 6-g IV loading dose followed by a 2-g/h IV maintenance dose more reliably achieves therapeutic serum magnesium concentrations (as defined by a concentration of at least 4.8 mg/dL) in obese women with preeclampsia.\nClinical Trial Registration\nClinicalTrials.gov, NCT02835339.\nMeSH Terms\nAdult\nBody Mass Index\nDrug Administration Schedule\nFemale\nHumans\nInfusions, Intravenous\nMagnesium Sulfate / administration & dosage, blood\nObesity / complications\nPre-Eclampsia / drug therapy, prevention & control\nPregnancy\nSeizures / complications, prevention & control\nSeverity of Illness Index\nYoung Adult"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w4",
+          "url": "https://www.nice.org.uk/guidance/qs135/chapter/quality-statement-6-magnesium-sulfate-for-women-between-240-and-296-weeks-of-pregnancy",
+          "title": "Quality statement 6: Magnesium sulfate for women between 24+0 and 29+6\u00a0weeks of pregnancy | Preterm labour and birth  | Quality standards | NICE",
+          "domain": "nice.org.uk",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w5",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/40288887",
+          "title": "Implementation of national guidelines on antenatal magnesium sulfate for neonatal neuroprotection: extended evaluation of the effectiveness and cost-effectiveness of the National PReCePT Programme in England.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w6",
+          "url": "https://www.nice.org.uk/guidance/ng133/resources/criteria-for-choice-of-critical-care-level-hypertension-preeclampsia-and-eclampsia-pdf-8720711396",
+          "title": "criteria for choice of critical care level (hypertension, pre-eclampsia ...",
+          "domain": "nice.org.uk",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 1 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "alternatives to magnesium sulfate in women with eclampsia.\nRegimen for magnesium sulfate \u2022 Loading dose of 4 g given intravenously over 5 to 15 minutes, followed by infusion of 1 g/hour for 24 hours \u2022 Further dose of 2 to 4 g given over 5 to 15 minutes if recurrent seizures Information Nifedipine: at the time of publication (June 2019), some brands of nifedipine were specifically contraindicated during pregnancy by the manufacturer in its summary of product characteristics (SPC). Refer to the individual SPCs for each preparation of nifedipine for further details.\nMagnesium sulfate regimen: also see The Eclampsia Trial Collaborative Group (1995) Which anticonvulsant for women with eclampsia? Evidence from the Collaborative Eclampsia Trial. Lancet 345:1455\u20131463.\nThe MHRA has issued a warning about the risk of skeletal adverse effects in the neonate following prolonged or repeated use of magnesium sulfate in pregnancy. Maternal administration of magnesium sulfate for longer than 5 to 7 days in pregnancy has been associated with skeletal adverse effects and hypocalcaemia and hypermagnesemia in neonates. If use of magnesium sulfate in pregnancy is prolonged or repeated, consider"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        }
+      ],
+      "stage_latencies_ms": {
+        "rewrite_ms": 1324.39,
+        "tavily_ms": 1257.98,
+        "fetch_fallback_ms": 0.0,
+        "audit_ms": 566.65,
+        "guard_ms": 0.9,
+        "total_ms": 3334.2
+      },
+      "latency_ms": 3334.2,
+      "tokens": 0
+    },
+    {
+      "id": "web_liraglutide_ped_04",
+      "query": "What is the FDA-approved pediatric dosing and titration schedule for liraglutide (Victoza) in Type 2 diabetes?",
+      "planned_queries": [
+        "FDA pediatric dosing liraglutide",
+        "liraglutide Victoza titration schedule"
+      ],
+      "findings_count": 3,
+      "selected_count": 3,
+      "guard_checked": true,
+      "guard_blocked_count": 0,
+      "selected_evidence": [
+        {
+          "result_id": "w1",
+          "url": "https://www.fda.gov/media/130110/download",
+          "title": "CLINICAL PHARMACOLOGY REVIEW - FDA",
+          "domain": "fda.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "prior to metformin titration 2) Run-in: metformin titration to 2000 mg daily, if possible, or a MTD \u22651000 mg and \u22642000 mg after verification of eligibility according to the inclusion and exclusion criteria. Subjects already treated with a stable dose \u2265 2000 mg of metformin or more for at least 56 days at the Reference ID: 4441266 5 time of screening could skip the run-in period and advance directly to randomization. Subjects who were treated with basal insulin should in addition to the stable dose of metformin have had a stable dose of basal insulin for at least 56 days to advance directly to visit 7.\n3) Randomized treatment: Escalation of liraglutide in weekly 0.6 mg increments over 2-3 weeks to 1.8 mg, if possible, or a MTD. Subjects on basal insulin had their insulin dose decreased by 20% at randomization.\n4) All subjects were unblinded at visit 17. Subjects treated with liraglutide continued with unchanged doses of metformin \u00b1 basal insulin and their treatment with liraglutide. Subjects treated with placebo discontinued placebo and continued on metformin \u00b1 basal insulin.\n5) All subjects were to complete visit 26. Subjects treated with liraglutide for more than 3 months were to",
+            "type 2 diabetes were randomized 2:1 either to liraglutide or placebo treatment (administered subcutaneously once daily) for five weeks. Subjects randomized to liraglutide treatment received 0.3 mg liraglutide daily (starting on Day 1) during the first week, followed by 0.6 mg daily (starting on Day 8) during the second week, 0.9 mg daily (starting on Day 15) Reference ID: 4441266 6 during the third week, 1.2 mg daily (starting on Day 22) during the fourth week, and 1.8 mg daily (starting on Day 29) during the fifth and final treatment week. Subjects randomized to placebo were given matched placebo treatments during each of the corresponding five weeks in order to maintain blinding.\nFigure 3. Study Design NN2211-1800 (Source: Figure 9-1 in NN2211-1800 Clinical Trial Report Version 1.0 Date 19 March 2012) Dose escalation in study NN2211-1800 was based on safety and tolerability (as an average of 3 measurements of FPG >110 mg/dL [6.1 mmol/L]) at each dose level, which was similar to study NN2211-3659. If dose escalation was not applicable, subjects continued on the highest reached dose for the remainder of the trial.\nSerial sampling for the 13-hours liraglutide PK profile was"
+          ]
+        },
+        {
+          "result_id": "w2",
+          "url": "https://www.fda.gov/media/125518/download",
+          "title": "NDA 022341 WRITTEN REQUEST Novo Nordisk, Inc. Attention - FDA",
+          "domain": "fda.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "to achieve adequate glycemic control. Liraglutide would provide a useful additional treatment option for pediatric patients with type 2 diabetes based on the low risk of hypoglycemia and the fact that it does not have adverse effects on body weight. The pharmacokinetics of liraglutide in the pediatric population has been established from results of the pediatric clinical pharmacology trial: A Phase 1 Randomized, Double-blind, Placebo- Controlled Trial to Assess Safety/Tolerability, Pharmacokinetics and Pharmacodynamics of Liraglutide in Pediatric Subjects (10 \u2013 16 years and 11 month old) with Type 2 Diabetes. Efficacy of liraglutide must be established in the pediatric population because it is unknown whether the effects of liraglutide are sufficiently similar between adults and the pediatric population. To obtain needed pediatric information on liraglutide, the Food and Drug Administration (FDA) is hereby making a formal Written Request, pursuant to Section 505A of the Federal Food, Drug, and Cosmetic Act (the Act), as amended by the Food and Drug Administration Amendments Act of 2007, that you submit information from the studies described below. Reference ID: 3191171 NDA 022341",
+            "individual, a dose of 0.6 mg, 1.2 mg, or 1.8 mg will be administered. Liraglutide and liraglutide placebo will be administered once daily by subcutaneous injection in the abdomen, thigh, or upper arm. After randomization, liraglutide or liraglutide placebo will be escalated weekly, starting at 0.6 mg and increasing with 0.6 mg increments. The starting and maintenance doses were determined based on FDA review of the results of the pediatric clinical pharmacology trial titled A Phase 1 Randomized, Double-blind, Placebo-Controlled Trial to Assess Safety/Tolerability, Pharmacokinetics and Pharmacodynamics of Liraglutide in Pediatric Subjects (10 \u2013 16 years and 11 month old) with Type 2 Diabetes. Use an age-appropriate formulation in the study described above. If an age appropriate formulation is not currently available, you must develop and test an age-appropriate formulation and, if it is found safe and effective in the studied pediatric population(s), you must seek marketing approval for that age-appropriate formulation. In accordance with section 505A(e)(2), if 1) you develop an age-appropriate formulation that is found to be safe and effective in the pediatric population(s)"
+          ]
+        },
+        {
+          "result_id": "w3",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/fda/fdaDrugXsl.cfm?setid=1a372465-d56b-2b80-e063-6394a90a3304&type=display",
+          "title": "LIRAGLUTIDE - DailyMed",
+          "domain": "dailymed.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "required, increase the dosage to the maximum recommended dosage of 1.8 mg\ninjected subcutaneously once daily after at least one week of treatment with the 1.2 mg once daily dosage.\nPediatric Patients Aged 10 Years and Older\n\u2022 The recommended starting dosage of liraglutide injection is 0.6 mg injected subcutaneously once daily.\n\u2022 If additional glycemic control is required, increase the dosage in 0.6 mg increments after at least one week on the\ncurrent dosage.\n\u2022 The maximum recommended dosage is 1.8 mg injected subcutaneously once daily.\n2.2 Recommendations Regarding Missed Dose\n\u2022 Instruct patients who miss a dose of liraglutide injection to resume the once -daily dosage regimen as prescribed with\nthe next scheduled dose. Do not administer an extra dose or increase the dose to make up for the missed dose.\n\u2022 If more than 3 days have elapsed since the last liraglutide injection dose, reinitiate liraglutide injection at 0.6 mg once\ndaily to mitigate any gastrointestinal symptoms associated with reinitiation of treatment. Upon reinitiation, liraglutide\ninjection should be titrated at the discretion of the healthcare provider.\n2.3 Important Administration Instructions\n\u2022 Inspect visually prior to each injection. Only use if solution is clear, colorless, and contains no particles.\n\u2022 Inject liraglutide injection subcutaneously once daily at any time of day, independently of meals.\n\u2022 Inject liraglutide injection subcutaneously in the abdomen, thigh or upper arm. No dosage adjustment is needed if\nchanging the injection site and/or timing.\n\u2022 Rotate injection sites within the same region in order to reduce the risk of cutaneous amyloidosis [see Adverse\nReactions (6.2)].\n\u2022 When using liraglutide injection with insulin, administer as separate injections. Never mix. It is acceptable to inject\nliraglutide injection and insulin in the same body region but the injections should not be adjacent to each other.\nInjection: 18 mg/3 mL (6 mg/mL) clear, colorless solution in a pre-filled, single-patient-use pen that delivers doses of 0.6\nmg, 1.2 mg, or 1.8 mg.\nLiraglutide injection is contraindicated in patients with a:\n\u2022 personal or family history of medullary thyroid carcinoma (MTC) or"
+          ]
+        }
+      ],
+      "findings": [
+        {
+          "result_id": "w1",
+          "url": "https://www.fda.gov/media/130110/download",
+          "title": "CLINICAL PHARMACOLOGY REVIEW - FDA",
+          "domain": "fda.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 2 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "prior to metformin titration 2) Run-in: metformin titration to 2000 mg daily, if possible, or a MTD \u22651000 mg and \u22642000 mg after verification of eligibility according to the inclusion and exclusion criteria. Subjects already treated with a stable dose \u2265 2000 mg of metformin or more for at least 56 days at the Reference ID: 4441266 5 time of screening could skip the run-in period and advance directly to randomization. Subjects who were treated with basal insulin should in addition to the stable dose of metformin have had a stable dose of basal insulin for at least 56 days to advance directly to visit 7.\n3) Randomized treatment: Escalation of liraglutide in weekly 0.6 mg increments over 2-3 weeks to 1.8 mg, if possible, or a MTD. Subjects on basal insulin had their insulin dose decreased by 20% at randomization.\n4) All subjects were unblinded at visit 17. Subjects treated with liraglutide continued with unchanged doses of metformin \u00b1 basal insulin and their treatment with liraglutide. Subjects treated with placebo discontinued placebo and continued on metformin \u00b1 basal insulin.\n5) All subjects were to complete visit 26. Subjects treated with liraglutide for more than 3 months were to",
+            "type 2 diabetes were randomized 2:1 either to liraglutide or placebo treatment (administered subcutaneously once daily) for five weeks. Subjects randomized to liraglutide treatment received 0.3 mg liraglutide daily (starting on Day 1) during the first week, followed by 0.6 mg daily (starting on Day 8) during the second week, 0.9 mg daily (starting on Day 15) Reference ID: 4441266 6 during the third week, 1.2 mg daily (starting on Day 22) during the fourth week, and 1.8 mg daily (starting on Day 29) during the fifth and final treatment week. Subjects randomized to placebo were given matched placebo treatments during each of the corresponding five weeks in order to maintain blinding.\nFigure 3. Study Design NN2211-1800 (Source: Figure 9-1 in NN2211-1800 Clinical Trial Report Version 1.0 Date 19 March 2012) Dose escalation in study NN2211-1800 was based on safety and tolerability (as an average of 3 measurements of FPG >110 mg/dL [6.1 mmol/L]) at each dose level, which was similar to study NN2211-3659. If dose escalation was not applicable, subjects continued on the highest reached dose for the remainder of the trial.\nSerial sampling for the 13-hours liraglutide PK profile was"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w2",
+          "url": "https://www.fda.gov/media/125518/download",
+          "title": "NDA 022341 WRITTEN REQUEST Novo Nordisk, Inc. Attention - FDA",
+          "domain": "fda.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 2 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "to achieve adequate glycemic control. Liraglutide would provide a useful additional treatment option for pediatric patients with type 2 diabetes based on the low risk of hypoglycemia and the fact that it does not have adverse effects on body weight. The pharmacokinetics of liraglutide in the pediatric population has been established from results of the pediatric clinical pharmacology trial: A Phase 1 Randomized, Double-blind, Placebo- Controlled Trial to Assess Safety/Tolerability, Pharmacokinetics and Pharmacodynamics of Liraglutide in Pediatric Subjects (10 \u2013 16 years and 11 month old) with Type 2 Diabetes. Efficacy of liraglutide must be established in the pediatric population because it is unknown whether the effects of liraglutide are sufficiently similar between adults and the pediatric population. To obtain needed pediatric information on liraglutide, the Food and Drug Administration (FDA) is hereby making a formal Written Request, pursuant to Section 505A of the Federal Food, Drug, and Cosmetic Act (the Act), as amended by the Food and Drug Administration Amendments Act of 2007, that you submit information from the studies described below. Reference ID: 3191171 NDA 022341",
+            "individual, a dose of 0.6 mg, 1.2 mg, or 1.8 mg will be administered. Liraglutide and liraglutide placebo will be administered once daily by subcutaneous injection in the abdomen, thigh, or upper arm. After randomization, liraglutide or liraglutide placebo will be escalated weekly, starting at 0.6 mg and increasing with 0.6 mg increments. The starting and maintenance doses were determined based on FDA review of the results of the pediatric clinical pharmacology trial titled A Phase 1 Randomized, Double-blind, Placebo-Controlled Trial to Assess Safety/Tolerability, Pharmacokinetics and Pharmacodynamics of Liraglutide in Pediatric Subjects (10 \u2013 16 years and 11 month old) with Type 2 Diabetes. Use an age-appropriate formulation in the study described above. If an age appropriate formulation is not currently available, you must develop and test an age-appropriate formulation and, if it is found safe and effective in the studied pediatric population(s), you must seek marketing approval for that age-appropriate formulation. In accordance with section 505A(e)(2), if 1) you develop an age-appropriate formulation that is found to be safe and effective in the pediatric population(s)"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w3",
+          "url": "https://dailymed.nlm.nih.gov/dailymed/fda/fdaDrugXsl.cfm?setid=1a372465-d56b-2b80-e063-6394a90a3304&type=display",
+          "title": "LIRAGLUTIDE - DailyMed",
+          "domain": "dailymed.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 1 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "required, increase the dosage to the maximum recommended dosage of 1.8 mg\ninjected subcutaneously once daily after at least one week of treatment with the 1.2 mg once daily dosage.\nPediatric Patients Aged 10 Years and Older\n\u2022 The recommended starting dosage of liraglutide injection is 0.6 mg injected subcutaneously once daily.\n\u2022 If additional glycemic control is required, increase the dosage in 0.6 mg increments after at least one week on the\ncurrent dosage.\n\u2022 The maximum recommended dosage is 1.8 mg injected subcutaneously once daily.\n2.2 Recommendations Regarding Missed Dose\n\u2022 Instruct patients who miss a dose of liraglutide injection to resume the once -daily dosage regimen as prescribed with\nthe next scheduled dose. Do not administer an extra dose or increase the dose to make up for the missed dose.\n\u2022 If more than 3 days have elapsed since the last liraglutide injection dose, reinitiate liraglutide injection at 0.6 mg once\ndaily to mitigate any gastrointestinal symptoms associated with reinitiation of treatment. Upon reinitiation, liraglutide\ninjection should be titrated at the discretion of the healthcare provider.\n2.3 Important Administration Instructions\n\u2022 Inspect visually prior to each injection. Only use if solution is clear, colorless, and contains no particles.\n\u2022 Inject liraglutide injection subcutaneously once daily at any time of day, independently of meals.\n\u2022 Inject liraglutide injection subcutaneously in the abdomen, thigh or upper arm. No dosage adjustment is needed if\nchanging the injection site and/or timing.\n\u2022 Rotate injection sites within the same region in order to reduce the risk of cutaneous amyloidosis [see Adverse\nReactions (6.2)].\n\u2022 When using liraglutide injection with insulin, administer as separate injections. Never mix. It is acceptable to inject\nliraglutide injection and insulin in the same body region but the injections should not be adjacent to each other.\nInjection: 18 mg/3 mL (6 mg/mL) clear, colorless solution in a pre-filled, single-patient-use pen that delivers doses of 0.6\nmg, 1.2 mg, or 1.8 mg.\nLiraglutide injection is contraindicated in patients with a:\n\u2022 personal or family history of medullary thyroid carcinoma (MTC) or"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        }
+      ],
+      "stage_latencies_ms": {
+        "rewrite_ms": 3090.59,
+        "tavily_ms": 1529.34,
+        "fetch_fallback_ms": 0.0,
+        "audit_ms": 826.53,
+        "guard_ms": 1.02,
+        "total_ms": 5641.77
+      },
+      "latency_ms": 5641.77,
+      "tokens": 0
+    },
+    {
+      "id": "web_anaphylaxis_05",
+      "query": "What is the recommended intramuscular epinephrine dose for adult vs. pediatric anaphylaxis according to NHS or CDC?",
+      "planned_queries": [
+        "intramuscular epinephrine dosing guidelines",
+        "anaphylaxis treatment recommendations CDC NHS"
+      ],
+      "findings_count": 6,
+      "selected_count": 2,
+      "guard_checked": true,
+      "guard_blocked_count": 0,
+      "selected_evidence": [
+        {
+          "result_id": "w1",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10185359",
+          "title": "Epinephrine in anaphylaxis",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "Epinephrine in anaphylaxis\nFlorence Morriello, Martin Chapman\nCMAJ : Canadian Medical Association Journal \u00b7 2023-05-15 \u00b7 195(19):E683-E683 \u00b7 DOI: 10.1503/cmaj.221319 \u00b7 PMID: 37188369 \u00b7 PMCID: PMC10185359\nRates of anaphylaxis are increasing\nHospital admissions for anaphylaxis have increased five- to sevenfold, with an increase in food-induced anaphylaxis (most frequently peanuts, shell-fish and tree nuts).1 Nonsteroidal anti-inflammatory drugs, antibiotics (specifically \u03b2-lactams), neuromuscular blocking agents and chemicals are the most commonly reported iatrogenic triggers.2 Reactions related to chemotherapeutic or immunomodulator agents are also increasing.3\nEpinephrine should be given immediately on recognition of anaphylaxis\nEpinephrine is the first-line treatment for anaphylaxis. Delays in administration are associated with poorer outcomes, including respiratory or cardiac arrest.4\nIntramuscular epinephrine should be used for initial treatment\nThe recommended dose and route for epinephrine is 0.5 mg intramuscularly for adults and 0.01 mg/kg intramuscularly in children weighing 30 kg or less, to a maximum of 0.3 mg in prepubertal children and 0.5 mg in adolescents. 4 Intramuscular epinephrine is administered into the deltoid or the vastus lateralis muscle of the mid-outer thigh and can be repeated within 5\u201315 minutes.4 Autoinjectors are effective, single-use, pre-filled syringes, available in doses of 0.3 mg for adults and for children and adolescents weighing more than 30 kg and 0.15 mg for children weighing 15\u201330 kg.4 A hold of 3 seconds against the skin during and after deployment allows the contents to discharge fully.\nMedication errors with epinephrine are common and can be dangerous\nWrong-route errors, where intramuscular epinephrine is mistakenly given intravenously, and wrong-dose errors, with intravenous delivery of epinephrine, are frequently reported.5 These errors can cause severe hypertension, angina, myocardial infarction, cardiogenic shock, stroke and potentially fatal tachyarrhythmias.4,5\nIntravenous infusions of epinephrine should be used only for refractory anaphylaxis\nRefractory anaphylaxis is defined as ongoing symptoms despite 2 doses of intramuscular epinephrine and occurs in about 1% of patients with severe anaphylaxis.4,6 Along with critical care consultation, a low-dose infusion of intravenous epinephrine should be started.4 Mixing 1 mg of epinephrine in 1000 mL of crystalloid creates a 1 \u03bcg/mL solution, infused at 5\u201320 \u03bcg per minute (5\u201320 mL/min).\nCMAJ invites submissions to \u201cFive things to know about \u2026\u201d Submit manuscripts online at \nReferences\n1. Yu JE, Lin RY. The epidemiology of anaphylaxis. Clin Rev Allergy Immunol 2018; 54: 366 \u2013 74. PMID:26357949 doi:10.1007/s12016-015-8503-x\n2. Baldo BA, Pham NH. Classification and descriptions of allergic reactions to drugs: drug allergy: clinical aspects, diagnosis, mechanisms, structure-activity relationships. 2nd ed. Switzerland: Springer Nature; 2021: 17 \u2013 57.\n3. Giavina-Bianchi P, Aun MV, Kalil J. Drug-induced anaphylaxis: Is it an epidemic? Curr Opin Allergy Clin Immunol 2018; 18: 59 \u2013 65. PMID:29135486 doi:10.1097/ACI.0000000000000411\n4. Dodd A, Hughes A,"
+          ]
+        },
+        {
+          "result_id": "w3",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9724388",
+          "title": "International recommendations on epinephrine auto-injector doses often differ from standard weight-based guidance: a review and clinical proposals",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "0.5 mg) is available. There have not been any reported adverse effects of 0.5 mg epinephrine used for the treatment of general allergic reactions/anaphylaxis . Further to this, there has been a recent study supporting the use of epinephrine 0.5 mg IM for patients with allergic reactions to subcutaneous allergen immunotherapy .\nNo published data support the claim or belief that children tolerate epinephrine better than adults. This idea may stem from an increased fear surrounding epinephrine use in adults with underlying cardiac disease. It stands to reason that this may be why some jurisdictions recommend lower mg per kg doses by auto-injector for adults at risk of anaphylaxis when compared to children.\nDose finding studies\nFor ethical reasons, it is nearly impossible to perform double-blind placebo-controlled studies on the effect of different doses of epinephrine used during anaphylaxis. Recently, Moss et al.  proposed that a method to further investigate optimal dosing could involve documentation of serum epinephrine levels in patients reacting during oral provocation challenges. However, patients react to different degrees with different symptoms to different amounts of ingested or injected allergen and there is also variability in the time from exposure to reaction. Thus, we do not believe it to be feasible to design and evaluate studies on comparing doses of epinephrine in clinical trials/practice by this method either.\nRecommended doses lower than 0.01 mg epinephrine/kg body weight\nDoses lower than the arbitrarily selected dose of 0.01 mg/kg body weight are given when children/adolescents weighing > 15 kg are treated with 0.15 mg epinephrine, patients weighing > 30 kg are treated with 0.3 mg epinephrine, and subjects weighing > 50 kg and treated with 0.5 mg epinephrine, as delineated in Table 1. Thus in most cases, when patients are prescribed auto-injectors, the majority are prescribed a dose lower than 0.01 mg/kg (Tables 1, 2, 3, and Figs. 1 and 2). For example, a 0.5 mg dose would result in dosing of 0.003 mg/kg in patients weighing 150 kg and a 0.3 mg dose would result in 0.002 mg/kg epinephrine. These doses would result in approximately",
+            "[8, 14\u201316].\nRecommended doses higher than 0.01 mg/kg body weight\nOften, children have received higher doses than those internationally agreed upon when prescribed epinephrine auto-injectors. This has occurred when children weighing less than 15 kg receive auto-injectors containing 0.15 mg, children weighing < 30 kg receive 0.3 mg, and those weighing < 50 kg are prescribed 0.5 mg (Table 2).\nThe highest doses per kg body weight are prescribed to children weighing less than 15 kg (Table 1). In many countries, auto-injector prescriptions in this population is still in keeping with national dose recommendations, assuming an allergist finds epinephrine to be indicated (Table 2). Even the EAACI indicates that 0.15 mg can be prescribed to children weighing 7.5 kg or more; despite the fact that in a 7.5 kg child, this would lead to double the generally recommended mg/kg dose. The AAAAI/ACAAI do not suggest any lower weight-limit for the 0.15 mg dose , whereas the Canadian Society of Allergy and Clinical Immunology recommends 0.15 mg for all children less than 15 kg with the caveat that this should be revisited when a lower dose becomes available .\nThere is one lower-dose auto-injector,"
+          ]
+        }
+      ],
+      "findings": [
+        {
+          "result_id": "w1",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10185359",
+          "title": "Epinephrine in anaphylaxis",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 1 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "Epinephrine in anaphylaxis\nFlorence Morriello, Martin Chapman\nCMAJ : Canadian Medical Association Journal \u00b7 2023-05-15 \u00b7 195(19):E683-E683 \u00b7 DOI: 10.1503/cmaj.221319 \u00b7 PMID: 37188369 \u00b7 PMCID: PMC10185359\nRates of anaphylaxis are increasing\nHospital admissions for anaphylaxis have increased five- to sevenfold, with an increase in food-induced anaphylaxis (most frequently peanuts, shell-fish and tree nuts).1 Nonsteroidal anti-inflammatory drugs, antibiotics (specifically \u03b2-lactams), neuromuscular blocking agents and chemicals are the most commonly reported iatrogenic triggers.2 Reactions related to chemotherapeutic or immunomodulator agents are also increasing.3\nEpinephrine should be given immediately on recognition of anaphylaxis\nEpinephrine is the first-line treatment for anaphylaxis. Delays in administration are associated with poorer outcomes, including respiratory or cardiac arrest.4\nIntramuscular epinephrine should be used for initial treatment\nThe recommended dose and route for epinephrine is 0.5 mg intramuscularly for adults and 0.01 mg/kg intramuscularly in children weighing 30 kg or less, to a maximum of 0.3 mg in prepubertal children and 0.5 mg in adolescents. 4 Intramuscular epinephrine is administered into the deltoid or the vastus lateralis muscle of the mid-outer thigh and can be repeated within 5\u201315 minutes.4 Autoinjectors are effective, single-use, pre-filled syringes, available in doses of 0.3 mg for adults and for children and adolescents weighing more than 30 kg and 0.15 mg for children weighing 15\u201330 kg.4 A hold of 3 seconds against the skin during and after deployment allows the contents to discharge fully.\nMedication errors with epinephrine are common and can be dangerous\nWrong-route errors, where intramuscular epinephrine is mistakenly given intravenously, and wrong-dose errors, with intravenous delivery of epinephrine, are frequently reported.5 These errors can cause severe hypertension, angina, myocardial infarction, cardiogenic shock, stroke and potentially fatal tachyarrhythmias.4,5\nIntravenous infusions of epinephrine should be used only for refractory anaphylaxis\nRefractory anaphylaxis is defined as ongoing symptoms despite 2 doses of intramuscular epinephrine and occurs in about 1% of patients with severe anaphylaxis.4,6 Along with critical care consultation, a low-dose infusion of intravenous epinephrine should be started.4 Mixing 1 mg of epinephrine in 1000 mL of crystalloid creates a 1 \u03bcg/mL solution, infused at 5\u201320 \u03bcg per minute (5\u201320 mL/min).\nCMAJ invites submissions to \u201cFive things to know about \u2026\u201d Submit manuscripts online at \nReferences\n1. Yu JE, Lin RY. The epidemiology of anaphylaxis. Clin Rev Allergy Immunol 2018; 54: 366 \u2013 74. PMID:26357949 doi:10.1007/s12016-015-8503-x\n2. Baldo BA, Pham NH. Classification and descriptions of allergic reactions to drugs: drug allergy: clinical aspects, diagnosis, mechanisms, structure-activity relationships. 2nd ed. Switzerland: Springer Nature; 2021: 17 \u2013 57.\n3. Giavina-Bianchi P, Aun MV, Kalil J. Drug-induced anaphylaxis: Is it an epidemic? Curr Opin Allergy Clin Immunol 2018; 18: 59 \u2013 65. PMID:29135486 doi:10.1097/ACI.0000000000000411\n4. Dodd A, Hughes A,"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w2",
+          "url": "https://www.canada.ca/en/public-health/services/publications/vaccines-immunization/dosage-intramuscular-epinephrine-solution-age-weight.html",
+          "title": "Dosage of intramuscular EPINEPHrine 1:1000 (1 mg/mL) solution, by age or weight - Canada.ca",
+          "domain": "canada.ca",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w3",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9724388",
+          "title": "International recommendations on epinephrine auto-injector doses often differ from standard weight-based guidance: a review and clinical proposals",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 2 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "0.5 mg) is available. There have not been any reported adverse effects of 0.5 mg epinephrine used for the treatment of general allergic reactions/anaphylaxis . Further to this, there has been a recent study supporting the use of epinephrine 0.5 mg IM for patients with allergic reactions to subcutaneous allergen immunotherapy .\nNo published data support the claim or belief that children tolerate epinephrine better than adults. This idea may stem from an increased fear surrounding epinephrine use in adults with underlying cardiac disease. It stands to reason that this may be why some jurisdictions recommend lower mg per kg doses by auto-injector for adults at risk of anaphylaxis when compared to children.\nDose finding studies\nFor ethical reasons, it is nearly impossible to perform double-blind placebo-controlled studies on the effect of different doses of epinephrine used during anaphylaxis. Recently, Moss et al.  proposed that a method to further investigate optimal dosing could involve documentation of serum epinephrine levels in patients reacting during oral provocation challenges. However, patients react to different degrees with different symptoms to different amounts of ingested or injected allergen and there is also variability in the time from exposure to reaction. Thus, we do not believe it to be feasible to design and evaluate studies on comparing doses of epinephrine in clinical trials/practice by this method either.\nRecommended doses lower than 0.01 mg epinephrine/kg body weight\nDoses lower than the arbitrarily selected dose of 0.01 mg/kg body weight are given when children/adolescents weighing > 15 kg are treated with 0.15 mg epinephrine, patients weighing > 30 kg are treated with 0.3 mg epinephrine, and subjects weighing > 50 kg and treated with 0.5 mg epinephrine, as delineated in Table 1. Thus in most cases, when patients are prescribed auto-injectors, the majority are prescribed a dose lower than 0.01 mg/kg (Tables 1, 2, 3, and Figs. 1 and 2). For example, a 0.5 mg dose would result in dosing of 0.003 mg/kg in patients weighing 150 kg and a 0.3 mg dose would result in 0.002 mg/kg epinephrine. These doses would result in approximately",
+            "[8, 14\u201316].\nRecommended doses higher than 0.01 mg/kg body weight\nOften, children have received higher doses than those internationally agreed upon when prescribed epinephrine auto-injectors. This has occurred when children weighing less than 15 kg receive auto-injectors containing 0.15 mg, children weighing < 30 kg receive 0.3 mg, and those weighing < 50 kg are prescribed 0.5 mg (Table 2).\nThe highest doses per kg body weight are prescribed to children weighing less than 15 kg (Table 1). In many countries, auto-injector prescriptions in this population is still in keeping with national dose recommendations, assuming an allergist finds epinephrine to be indicated (Table 2). Even the EAACI indicates that 0.15 mg can be prescribed to children weighing 7.5 kg or more; despite the fact that in a 7.5 kg child, this would lead to double the generally recommended mg/kg dose. The AAAAI/ACAAI do not suggest any lower weight-limit for the 0.15 mg dose , whereas the Canadian Society of Allergy and Clinical Immunology recommends 0.15 mg for all children less than 15 kg with the caveat that this should be revisited when a lower dose becomes available .\nThere is one lower-dose auto-injector,"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w4",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4173449",
+          "title": "Anaphyllaxis management: Current concepts",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w5",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10259181",
+          "title": "Who Needs Epinephrine? Anaphylaxis, Autoinjectors, and Parachutes",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w6",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9345203",
+          "title": "Emergency treatment of anaphylaxis: concise clinical guidance",
+          "domain": "pmc.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        }
+      ],
+      "stage_latencies_ms": {
+        "rewrite_ms": 1521.94,
+        "tavily_ms": 2412.45,
+        "fetch_fallback_ms": 0.0,
+        "audit_ms": 941.05,
+        "guard_ms": 0.95,
+        "total_ms": 5082.22
+      },
+      "latency_ms": 5082.22,
+      "tokens": 0
+    },
+    {
+      "id": "web_ckd_sglt2_06",
+      "query": "According to NICE guidelines, when should SGLT2 inhibitors be offered to adults with chronic kidney disease and albuminuria?",
+      "planned_queries": [
+        "SGLT2 inhibitors guidelines CKD",
+        "NICE recommendations SGLT2 inhibitors"
+      ],
+      "findings_count": 5,
+      "selected_count": 3,
+      "guard_checked": true,
+      "guard_blocked_count": 0,
+      "selected_evidence": [
+        {
+          "result_id": "w1",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39353639",
+          "title": "Sodium-glucose cotransporter-2 (SGLT-2) inhibitors for adults with chronic kidney disease: a clinical practice guideline.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "Sodium-glucose cotransporter-2 (SGLT-2) inhibitors for adults with chronic kidney disease: a clinical practice guideline.\nArnav Agarwal, Xiaoxi Zeng, Sheyu Li, Daniel Rayner, Farid Foroutan, Bert Aertgeerts, Frederic Coyac, Pauline Darbellay Farhoumand, Andrew Demaine, Anja Fog Heen, Vivekanand Jha, Edward Machuve, Evi Nagler, David J Tunnicliffe, Gordon H Guyatt, Per Olav Vandvik, Belen Ponte, Thomas Agoritsas\nBMJ (Clinical research ed.) \u00b7 2024-10-01 \u00b7 387:e080257 \u00b7 DOI: 10.1136/bmj-2024-080257 \u00b7 PMID: 39353639\nPublication type: Journal Article, Practice Guideline\nClinical Question\nWhat is the impact of sodium-glucose cotransporter-2 (SGLT-2) inhibitors on survival and on cardiovascular and kidneyoutcomes for adults living with chronic kidney disease (CKD)?\nCurrent Practice\nFew therapies slow kidney disease progression and improve long term prognosis for adults living with CKD. SGLT-2 inhibitors have demonstrated cardiovascular and kidney benefits in adults with CKD with and without type 2 diabetes. Existing guidance for SGLT-2 inhibitors does not account for the totality of current best evidence for adults with CKD and does not provide fully stratified treatment effects and recommendations across all risk groups based on risk of CKD progression and complications.\nRecommendations\nThe guideline panel considered evidence regarding benefits and harms of SGLT-2 inhibitor therapy for adults with CKD over a five year period, along with contextual factors, and provided the following recommendations:1. For adults at low risk of CKD progression and complications, we suggest administering SGLT-2 inhibitors (weak recommendation in favour)2. For adults at moderate risk of CKD progression and complications, we suggest administering SGLT-2 inhibitors (weak recommendation in favour)3. For adults at high risk of CKD progression and complications, we recommend administering SGLT-2 inhibitors (strong recommendation in favour)4. For adults at very high risk of CKD progression and complications, we recommend administering SGLT-2 inhibitors (strong recommendation in favour).Recommendations are applicable to all adults with CKD, irrespective of type 2 diabetes status.\nHow This",
+            "outcomes except demonstrating little or no effect on hospitalisation for heart failure and kidney failure. Among individuals at moderate and low risk, moderate to high certainty evidence shows SGLT-2 inhibitors probably reduce all-cause mortality and non-fatal stroke, with little or no effect for other outcomes of benefit. Risk-stratified estimates were unavailable for outcomes of harm; the panel therefore considered absolute effects summarised across risk strata. SGLT-2 inhibitors are associated with little or no effect on acute kidney injury requiring dialysis, bone fractures, lower limb amputations, ketoacidosis, genital infections, or symptomatic hypovolaemia, although a residual possibility of harms at the individual patient level remains.\nUnderstanding The Recommendation\nIn order to apply recommendations, clinicians must appropriately identify adults with CKD, consider the underlying aetiology, and risk stratify them based on glomerular filtration rate (estimated or measured) and degree of albuminuria. In addition to classifying individuals into risk strata, further estimation of a given patient's risk based on the extent of their kidney disease and other comorbidities may"
+          ]
+        },
+        {
+          "result_id": "w2",
+          "url": "https://nhssomerset.nhs.uk/news/document/ckd-guideline-003",
+          "title": "updated guidelines",
+          "domain": "nhssomerset.nhs.uk",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "Optimising management of Chronic Kidney Disease in adults with Type 2 Diabetes and/or 1,2\npersistent proteinuria (ACR \u22653mg/mmol)\nIf Haematuria present-Check Creatinine/eGFR and visible/non-visible haematuria Consider Urology referral Ensure infection treated/ruled out\n1. ACE inhibitor\u00b9 (or ARB) Titrated to highest dose tolerated\n2. SGLT2 inhibitor<sup>2,3</sup> \u2013 Dapagliflozin 10mg OD can be initiated down to eGFR 25mls/min for patients with diabetes or\n2,4,5 uACR\u226522.6mmol/L \u2013 currently the only SGLT2i licensed for treatment of CKD (emerging evidence that Empagliflozin is also beneficial for CKD patients\u2076) other SGLT2i are licensed for diabetes control and can usually be continued, please check SPC, consider switch to dapagliflozin given observed benefits for CKD patients<sup>5,7,8</sup> Review (BP, U&E, urine ACR) if stable; NB there may be a small drop in eGFR (with rise in creatinine) on initiation of SGLT2i (which will then plateau) however additional monitoring not required \u2013 experts suggest waiting 1 month after initiation before rechecking renal function.\nAnnually if eGFR >60ml/min\n3. BP control \u2013 initial target <130/80mmHg<sup>1,9</sup>\n6 monthly if eGFR 30-60ml/min\n4."
+          ]
+        },
+        {
+          "result_id": "w4",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/42440015",
+          "title": "Implementing SGLT2 Inhibitor Therapy in Line with the New NICE Guidelines for Type 2 Diabetes Management.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "chunks": [
+            "Implementing SGLT2 Inhibitor Therapy in Line with the New NICE Guidelines for Type 2 Diabetes Management.\nPhilip Newland-Jones, Partha Kar, Beth Kelly, Rahul Mohan, Sarah Davies, Jane Diggle, Marc Evans, Kevin Fernando, Debbie Hicks, Naresh Kanumilli, Nicola Milne, Dipesh Patel, Samuel Seidu, Adie Viljoen, David C Wheeler, John P H Wilding\nDiabetes therapy : research, treatment and education of diabetes and related disorders \u00b7 2026-07-13 \u00b7 17(8):1095-1117 \u00b7 DOI: 10.1007/s13300-026-01889-x \u00b7 PMID: 42440015 \u00b7 PMCID: PMC13457809\nPublication type: Journal Article, Review\nAbstract\nThe latest type 2 diabetes mellitus (T2DM) management guidelines from the UK National Institute for Health and Care Excellence (NICE; NG28) have raised the profile of sodium-glucose cotransporter-2 inhibitors (SGLT2is) so that they are now the preferred first-line therapy in combination with modified-release metformin (or as monotherapy where metformin is contraindicated/not tolerated) for most individuals. Previous NICE recommendations limited use to those with high cardiovascular disease (CVD) risk or existing CVD and/or kidney disease for first-line treatment or people with a need for additional glycaemic optimisation at later stages in the pathway. This change brings the guidelines in line with other national and international recommendations regarding SGLT2i use for the achievement and maintenance of glycaemic targets and lowering of progressive risk for cardiovascular, renal and metabolic (CVRM) complications. Yet, despite a plethora of evidence supporting the role that SGLT2is can play in sustaining long-term health outcomes in people with T2DM, prescribing data from real-world clinical practice show that these therapies are under-prescribed, particularly among those populations most likely to benefit from their use (including individuals with CVD or high CVRM risk). This latest narrative review from the Improving Diabetes Steering Committee examines the place of SGLT2is within the latest NG28 guidelines and likely reasons for suboptimal SGLT2i use, providing pragmatic advice on appropriate approaches to initiation and management in daily practice and setting perceived risks into"
+          ]
+        }
+      ],
+      "findings": [
+        {
+          "result_id": "w1",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/39353639",
+          "title": "Sodium-glucose cotransporter-2 (SGLT-2) inhibitors for adults with chronic kidney disease: a clinical practice guideline.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 2 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "Sodium-glucose cotransporter-2 (SGLT-2) inhibitors for adults with chronic kidney disease: a clinical practice guideline.\nArnav Agarwal, Xiaoxi Zeng, Sheyu Li, Daniel Rayner, Farid Foroutan, Bert Aertgeerts, Frederic Coyac, Pauline Darbellay Farhoumand, Andrew Demaine, Anja Fog Heen, Vivekanand Jha, Edward Machuve, Evi Nagler, David J Tunnicliffe, Gordon H Guyatt, Per Olav Vandvik, Belen Ponte, Thomas Agoritsas\nBMJ (Clinical research ed.) \u00b7 2024-10-01 \u00b7 387:e080257 \u00b7 DOI: 10.1136/bmj-2024-080257 \u00b7 PMID: 39353639\nPublication type: Journal Article, Practice Guideline\nClinical Question\nWhat is the impact of sodium-glucose cotransporter-2 (SGLT-2) inhibitors on survival and on cardiovascular and kidneyoutcomes for adults living with chronic kidney disease (CKD)?\nCurrent Practice\nFew therapies slow kidney disease progression and improve long term prognosis for adults living with CKD. SGLT-2 inhibitors have demonstrated cardiovascular and kidney benefits in adults with CKD with and without type 2 diabetes. Existing guidance for SGLT-2 inhibitors does not account for the totality of current best evidence for adults with CKD and does not provide fully stratified treatment effects and recommendations across all risk groups based on risk of CKD progression and complications.\nRecommendations\nThe guideline panel considered evidence regarding benefits and harms of SGLT-2 inhibitor therapy for adults with CKD over a five year period, along with contextual factors, and provided the following recommendations:1. For adults at low risk of CKD progression and complications, we suggest administering SGLT-2 inhibitors (weak recommendation in favour)2. For adults at moderate risk of CKD progression and complications, we suggest administering SGLT-2 inhibitors (weak recommendation in favour)3. For adults at high risk of CKD progression and complications, we recommend administering SGLT-2 inhibitors (strong recommendation in favour)4. For adults at very high risk of CKD progression and complications, we recommend administering SGLT-2 inhibitors (strong recommendation in favour).Recommendations are applicable to all adults with CKD, irrespective of type 2 diabetes status.\nHow This",
+            "outcomes except demonstrating little or no effect on hospitalisation for heart failure and kidney failure. Among individuals at moderate and low risk, moderate to high certainty evidence shows SGLT-2 inhibitors probably reduce all-cause mortality and non-fatal stroke, with little or no effect for other outcomes of benefit. Risk-stratified estimates were unavailable for outcomes of harm; the panel therefore considered absolute effects summarised across risk strata. SGLT-2 inhibitors are associated with little or no effect on acute kidney injury requiring dialysis, bone fractures, lower limb amputations, ketoacidosis, genital infections, or symptomatic hypovolaemia, although a residual possibility of harms at the individual patient level remains.\nUnderstanding The Recommendation\nIn order to apply recommendations, clinicians must appropriately identify adults with CKD, consider the underlying aetiology, and risk stratify them based on glomerular filtration rate (estimated or measured) and degree of albuminuria. In addition to classifying individuals into risk strata, further estimation of a given patient's risk based on the extent of their kidney disease and other comorbidities may"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w2",
+          "url": "https://nhssomerset.nhs.uk/news/document/ckd-guideline-003",
+          "title": "updated guidelines",
+          "domain": "nhssomerset.nhs.uk",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 1 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "Optimising management of Chronic Kidney Disease in adults with Type 2 Diabetes and/or 1,2\npersistent proteinuria (ACR \u22653mg/mmol)\nIf Haematuria present-Check Creatinine/eGFR and visible/non-visible haematuria Consider Urology referral Ensure infection treated/ruled out\n1. ACE inhibitor\u00b9 (or ARB) Titrated to highest dose tolerated\n2. SGLT2 inhibitor<sup>2,3</sup> \u2013 Dapagliflozin 10mg OD can be initiated down to eGFR 25mls/min for patients with diabetes or\n2,4,5 uACR\u226522.6mmol/L \u2013 currently the only SGLT2i licensed for treatment of CKD (emerging evidence that Empagliflozin is also beneficial for CKD patients\u2076) other SGLT2i are licensed for diabetes control and can usually be continued, please check SPC, consider switch to dapagliflozin given observed benefits for CKD patients<sup>5,7,8</sup> Review (BP, U&E, urine ACR) if stable; NB there may be a small drop in eGFR (with rise in creatinine) on initiation of SGLT2i (which will then plateau) however additional monitoring not required \u2013 experts suggest waiting 1 month after initiation before rechecking renal function.\nAnnually if eGFR >60ml/min\n3. BP control \u2013 initial target <130/80mmHg<sup>1,9</sup>\n6 monthly if eGFR 30-60ml/min\n4."
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w3",
+          "url": "https://www.nice.org.uk/guidance/ng28/update/ng28-update-3/documents/supporting-documentation",
+          "title": "Choosing medicines for type 2 diabetes - NICE",
+          "domain": "nice.org.uk",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w4",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/42440015",
+          "title": "Implementing SGLT2 Inhibitor Therapy in Line with the New NICE Guidelines for Type 2 Diabetes Management.",
+          "domain": "pubmed.ncbi.nlm.nih.gov",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": true,
+          "reason": "Selected 1 merged passage(s) via vector similarity.",
+          "extracted_chunks": [
+            "Implementing SGLT2 Inhibitor Therapy in Line with the New NICE Guidelines for Type 2 Diabetes Management.\nPhilip Newland-Jones, Partha Kar, Beth Kelly, Rahul Mohan, Sarah Davies, Jane Diggle, Marc Evans, Kevin Fernando, Debbie Hicks, Naresh Kanumilli, Nicola Milne, Dipesh Patel, Samuel Seidu, Adie Viljoen, David C Wheeler, John P H Wilding\nDiabetes therapy : research, treatment and education of diabetes and related disorders \u00b7 2026-07-13 \u00b7 17(8):1095-1117 \u00b7 DOI: 10.1007/s13300-026-01889-x \u00b7 PMID: 42440015 \u00b7 PMCID: PMC13457809\nPublication type: Journal Article, Review\nAbstract\nThe latest type 2 diabetes mellitus (T2DM) management guidelines from the UK National Institute for Health and Care Excellence (NICE; NG28) have raised the profile of sodium-glucose cotransporter-2 inhibitors (SGLT2is) so that they are now the preferred first-line therapy in combination with modified-release metformin (or as monotherapy where metformin is contraindicated/not tolerated) for most individuals. Previous NICE recommendations limited use to those with high cardiovascular disease (CVD) risk or existing CVD and/or kidney disease for first-line treatment or people with a need for additional glycaemic optimisation at later stages in the pathway. This change brings the guidelines in line with other national and international recommendations regarding SGLT2i use for the achievement and maintenance of glycaemic targets and lowering of progressive risk for cardiovascular, renal and metabolic (CVRM) complications. Yet, despite a plethora of evidence supporting the role that SGLT2is can play in sustaining long-term health outcomes in people with T2DM, prescribing data from real-world clinical practice show that these therapies are under-prescribed, particularly among those populations most likely to benefit from their use (including individuals with CVD or high CVRM risk). This latest narrative review from the Improving Diabetes Steering Committee examines the place of SGLT2is within the latest NG28 guidelines and likely reasons for suboptimal SGLT2i use, providing pragmatic advice on appropriate approaches to initiation and management in daily practice and setting perceived risks into"
+          ],
+          "candidate_links": [],
+          "followed_from_id": null
+        },
+        {
+          "result_id": "w5",
+          "url": "https://www.nice.org.uk/guidance/ng28/chapter/Initial-medicines",
+          "title": "Initial medicines | Type 2 diabetes in adults: management  | Guidance | NICE",
+          "domain": "nice.org.uk",
+          "content_type": "html",
+          "tier": "dominant",
+          "guard_passed": true,
+          "guard_reason": null,
+          "readable": true,
+          "unreadable_reason": null,
+          "relevant": false,
+          "reason": "No chunks met similarity threshold (0.35).",
+          "extracted_chunks": [],
+          "candidate_links": [],
+          "followed_from_id": null
+        }
+      ],
+      "stage_latencies_ms": {
+        "rewrite_ms": 1467.8,
+        "tavily_ms": 215.47,
+        "fetch_fallback_ms": 0.0,
+        "audit_ms": 641.98,
+        "guard_ms": 0.85,
+        "total_ms": 2508.34
+      },
+      "latency_ms": 2508.34,
+      "tokens": 0
+    }
+  ]
+}

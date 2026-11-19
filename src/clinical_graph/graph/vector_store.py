@@ -144,6 +144,8 @@ class LocalVectorStore:
         self._texts: dict[str, str] = {}
         self._entry_types: dict[str, str] = {}
         self._doc_ids: dict[str, str | None] = {}
+        self._label_vectors: dict[str, np.ndarray] = {}
+        self._label_texts: dict[str, str] = {}
 
     def _embed_texts(self, texts: list[str], api_key: str | None = None) -> list[np.ndarray]:
         embed_many_fn = getattr(self._embedder, "embed_many", None)
@@ -177,6 +179,58 @@ class LocalVectorStore:
                         f"Re-embedded vector for {nid!r} has shape {normalized.shape}, expected {target_shape}"
                     )
                 self._vectors[nid] = normalized
+
+    def has_label(self, node_id: str) -> bool:
+        """Return ``True`` if a label-only vector is stored for ``node_id``."""
+        return node_id in self._label_vectors
+
+    def upsert_label(self, node_id: str, text: str, api_key: str | None = None) -> None:
+        """Embed and store a label-only vector for ``node_id``."""
+        vec = _l2_normalize(self._embedder.embed(text, api_key=api_key))
+        self._label_vectors[node_id] = vec
+        self._label_texts[node_id] = text
+
+    def upsert_labels_batch(
+        self,
+        items: list[tuple[str, str]],
+        api_key: str | None = None,
+    ) -> None:
+        """Batch-embed and store label-only vectors for ``(node_id, text)`` pairs."""
+        if not items:
+            return
+        texts = [text for _, text in items]
+        vectors = self._embed_texts(texts, api_key=api_key)
+        for (node_id, text), vec in zip(items, vectors, strict=True):
+            self._label_vectors[node_id] = _l2_normalize(vec)
+            self._label_texts[node_id] = text
+
+    def search_labels(
+        self,
+        query: str,
+        *,
+        top_k: int = 1,
+        query_vector: np.ndarray | None = None,
+        api_key: str | None = None,
+    ) -> list[tuple[str, float]]:
+        """Return up to ``top_k`` ``(node_id, cosine_similarity)`` pairs against label vectors."""
+        if top_k <= 0 or not self._label_vectors:
+            return []
+        if query_vector is not None:
+            query_vec = _l2_normalize(np.asarray(query_vector, dtype=np.float32))
+        else:
+            query_vec = _l2_normalize(self._embedder.embed(query, api_key=api_key))
+        candidate_ids = [
+            nid for nid, vec in self._label_vectors.items() if vec.shape == query_vec.shape
+        ]
+        if not candidate_ids:
+            return []
+        matrix = np.stack([self._label_vectors[nid] for nid in candidate_ids])
+        scores = matrix @ query_vec
+        ranked = sorted(
+            zip(candidate_ids, (float(s) for s in scores), strict=True),
+            key=lambda item: (-item[1], item[0]),
+        )
+        return ranked[:top_k]
 
     def upsert(
         self,
@@ -240,6 +294,18 @@ class LocalVectorStore:
         ]
         return self.delete_many(matching_ids)
 
+    def embed_queries(
+        self,
+        queries: list[str],
+        *,
+        api_key: str | None = None,
+    ) -> list[np.ndarray]:
+        """Batch-embed and L2-normalize ``queries`` in a single embedder call."""
+        if not queries or not self._vectors:
+            return []
+        vecs = self._embed_texts(queries, api_key=api_key)
+        return [_l2_normalize(v) for v in vecs]
+
     def search(
         self,
         query: str,
@@ -248,12 +314,17 @@ class LocalVectorStore:
         api_key: str | None = None,
         entry_types: set[str] | None = None,
         allowed_doc_ids: set[str] | None = None,
+        query_vector: np.ndarray | None = None,
     ) -> list[tuple[str, float]]:
         """Return up to ``top_k`` ``(node_id, cosine_similarity)`` pairs descending."""
         if top_k <= 0 or not self._vectors:
             return []
 
-        query_vec = _l2_normalize(self._embedder.embed(query, api_key=api_key))
+        query_vec = (
+            _l2_normalize(query_vector)
+            if query_vector is not None
+            else _l2_normalize(self._embedder.embed(query, api_key=api_key))
+        )
         if float(np.linalg.norm(query_vec)) == 0.0:
             return []
 
@@ -303,6 +374,14 @@ class LocalVectorStore:
             matrix = np.empty((0, 0), dtype=np.float32)
 
         np.savez(target_dir / "vectors.npz", node_ids=node_ids, matrix=matrix)
+        if self._label_vectors:
+            l_ids = np.array(list(self._label_vectors.keys()), dtype=str)
+            l_mat = np.stack([self._label_vectors[nid] for nid in l_ids]).astype(np.float32)
+            np.savez(target_dir / "label_vectors.npz", node_ids=l_ids, matrix=l_mat)
+            (target_dir / "label_texts.json").write_text(
+                json.dumps(self._label_texts, indent=2),
+                encoding="utf-8",
+            )
         (target_dir / "vector_texts.json").write_text(
             json.dumps(self._texts, indent=2),
             encoding="utf-8",
@@ -337,6 +416,20 @@ class LocalVectorStore:
         if texts_path.is_file():
             raw_texts = json.loads(texts_path.read_text(encoding="utf-8"))
             self._texts = {str(k): str(v) for k, v in raw_texts.items()}
+
+        label_npz_path = target_dir / "label_vectors.npz"
+        label_texts_path = target_dir / "label_texts.json"
+        if label_npz_path.is_file():
+            with np.load(label_npz_path, allow_pickle=False) as ldata:
+                lnode_ids = ldata["node_ids"]
+                lmatrix = ldata["matrix"]
+                self._label_vectors = {
+                    str(nid): np.asarray(lmatrix[idx], dtype=np.float32)
+                    for idx, nid in enumerate(lnode_ids)
+                }
+        if label_texts_path.is_file():
+            raw_ltexts = json.loads(label_texts_path.read_text(encoding="utf-8"))
+            self._label_texts = {str(k): str(v) for k, v in raw_ltexts.items()}
 
         if meta_path.is_file():
             raw_meta = json.loads(meta_path.read_text(encoding="utf-8"))

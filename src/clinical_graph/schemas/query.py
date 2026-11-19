@@ -77,6 +77,20 @@ class Citation(BaseModel):
     passages: list[CitationPassage] = Field(default_factory=list)
 
 
+class WebSourceRef(BaseModel):
+    """Verified web source retrieved and injected into answer synthesis."""
+
+    result_id: str
+    url: str
+    title: str
+    domain: str
+    content_type: Literal["html", "pdf"] = "html"
+    tier: Literal["dominant", "regional"] = "dominant"
+    excerpts: list[str] = Field(default_factory=list)
+    content_type: Literal["html", "pdf"] = "html"
+    tier: Literal["dominant", "regional"] = "dominant"
+
+
 class RetrievalTrace(BaseModel):
     """Diagnostic trace of graph and document retrieval for a query."""
 
@@ -88,6 +102,9 @@ class RetrievalTrace(BaseModel):
     traversed_edges: list[dict[str, Any]] = Field(default_factory=list)
     matched_doc_ids: list[str] = Field(default_factory=list)
     assembled_context: str | None = None
+    chunk_sources: dict[str, Literal["rag", "graph", "both"]] = Field(default_factory=dict)
+    web_search_queries: list[str] = Field(default_factory=list)
+    web_sources: list[WebSourceRef] = Field(default_factory=list)
 
 
 class QueryResponse(BaseModel):
@@ -97,7 +114,10 @@ class QueryResponse(BaseModel):
     answer: str
     chosen_mode: ResolvedRetrievalMode | None = None
     citations: list[Citation] = Field(default_factory=list)
+    web_sources: list[WebSourceRef] = Field(default_factory=list)
     used_web_fallback: bool = False
     audit_passed: bool | None = None
+    guard_reachable: bool | None = None
+    guard_blocked: bool = False
     trace: RetrievalTrace | None = None
     metrics: PipelineMetrics | None = None

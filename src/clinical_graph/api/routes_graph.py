@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query, Request
 
 from clinical_graph.api.deps import get_knowledge_manager
 from clinical_graph.graph.manager import KnowledgeManager
+from clinical_graph.guardrails.prompt_guard import ClinicalGuardClient
 
 graph_router = APIRouter(prefix="/v1/graph", tags=["graph"])
 system_router = APIRouter(prefix="/v1/system", tags=["system"])
@@ -15,10 +16,20 @@ benchmarks_router = APIRouter(prefix="/v1/benchmarks", tags=["system"])
 
 
 @system_router.get("/status")
-async def get_system_status(request: Request) -> dict[str, bool]:
+async def get_system_status(request: Request) -> dict[str, bool | int]:
     """Return runtime configuration flags needed by the web UI."""
     settings = request.app.state.settings
-    return {"has_openai_api_key": bool(settings.openai_api_key)}
+    guard_ok = (
+        await ClinicalGuardClient(settings.clinical_guard_url).check_health()
+        if settings.clinical_guard_url
+        else False
+    )
+    return {
+        "has_openai_api_key": bool(settings.openai_api_key),
+        "prompt_guard_reachable": guard_ok,
+        "prompt_guard_poll_seconds": settings.clinical_guard_health_poll_seconds,
+        "auto_prune_non_frozen_hours": settings.auto_prune_non_frozen_hours,
+    }
 
 
 def _compact_run(run: dict[str, Any]) -> dict[str, Any]:
@@ -37,6 +48,53 @@ def _compact_run(run: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _collect_unit_evals(results_dir: Path) -> list[dict[str, Any]]:
+    """Collect the latest summary for each unit eval suite from eval/results."""
+    if not results_dir.is_dir():
+        return []
+    specs = [
+        ("unit_triggers_*.json", "Web Triggers"),
+        ("unit_retrieval_*.json", "Local Retrieval"),
+        ("unit_web_search_*.json", "1-Shot Web Search"),
+        ("unit_synthesis_*.json", "Answer Synthesis"),
+    ]
+    summaries: list[dict[str, Any]] = []
+    for pattern, label in specs:
+        files = sorted(results_dir.glob(pattern), key=lambda p: p.name, reverse=True)
+        if not files:
+            continue
+        latest = files[0]
+        try:
+            payload = json.loads(latest.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        rows = payload.get("results") or []
+        latencies = [
+            float(r["latency_ms"])
+            for r in rows
+            if isinstance(r, dict) and isinstance(r.get("latency_ms"), (int, float))
+        ]
+        avg_ms = round(sum(latencies) / len(latencies), 1) if latencies else None
+        entry: dict[str, Any] = {
+            "label": label,
+            "filename": latest.name,
+            "avg_latency_ms": avg_ms,
+        }
+        if "passed" in payload and "total" in payload:
+            entry["passed"] = payload["passed"]
+            entry["total"] = payload["total"]
+        else:
+            entry["cases"] = len(rows)
+            selected = [
+                int(r["selected_count"])
+                for r in rows
+                if isinstance(r, dict) and isinstance(r.get("selected_count"), int)
+            ]
+            entry["avg_sources"] = round(sum(selected) / len(selected), 1) if selected else None
+        summaries.append(entry)
+    return summaries
+
+
 @benchmarks_router.get("")
 async def get_benchmarks() -> dict[str, Any]:
     """Return the latest evaluation benchmark summary and compact per-query runs."""
@@ -44,13 +102,14 @@ async def get_benchmarks() -> dict[str, Any]:
     if not results_dir.is_dir():
         results_dir = Path(__file__).resolve().parents[3] / "eval" / "results"
 
+    unit_evals = _collect_unit_evals(results_dir)
     eval_files = (
         sorted(results_dir.glob("eval_*.json"), key=lambda p: p.name, reverse=True)
         if results_dir.is_dir()
         else []
     )
     if not eval_files:
-        return {"available": False, "summary": None, "results": []}
+        return {"available": False, "summary": None, "results": [], "unit_evals": unit_evals}
 
     latest_path = eval_files[0]
     data = json.loads(latest_path.read_text(encoding="utf-8"))
@@ -81,6 +140,7 @@ async def get_benchmarks() -> dict[str, Any]:
         "queries_file": data.get("queries_file"),
         "summary": data.get("summary"),
         "results": compact_results,
+        "unit_evals": unit_evals,
     }
 
 

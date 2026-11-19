@@ -9,7 +9,7 @@ EXPECTED_DEFAULT_VERSIONS = (
     ("edge_extraction", "v3"),
     ("graph_extraction", "v1"),
     ("table_summary", "v1"),
-    ("query_rewrite", "v3"),
+    ("query_rewrite", "v4"),
     ("answer_synthesis", "v4"),
     ("document_classifier", "v1"),
 )

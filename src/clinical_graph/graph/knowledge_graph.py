@@ -129,6 +129,13 @@ class ClinicalKnowledgeGraph:
         )
         return node, embed_text
 
+    @staticmethod
+    def _build_node_label_text(canonical_name: str, aliases: list[str]) -> str:
+        clean_aliases = [a for a in aliases if a and a.strip()]
+        if clean_aliases:
+            return f"{canonical_name} | Aliases: {', '.join(clean_aliases)}"
+        return canonical_name
+
     def upsert_node(
         self,
         node_id: str,
@@ -139,7 +146,7 @@ class ClinicalKnowledgeGraph:
         doc_id: str | None = None,
         api_key: str | None = None,
     ) -> GraphNode:
-        """Insert or merge a node, update alias index, and refresh its vector embedding."""
+        """Insert or merge a node, update alias index, and refresh its vector embeddings."""
         node, embed_text = self._upsert_node_in_graph(
             node_id=node_id,
             canonical_name=canonical_name,
@@ -149,6 +156,9 @@ class ClinicalKnowledgeGraph:
             doc_id=doc_id,
         )
         self._vector_store.upsert(node_id, embed_text, api_key=api_key)
+        if node.node_type != "document":
+            label_text = self._build_node_label_text(node.canonical_name, node.aliases)
+            self._vector_store.upsert_label(node.node_id, label_text, api_key=api_key)
         return node
 
     def upsert_nodes_batch(
@@ -157,11 +167,12 @@ class ClinicalKnowledgeGraph:
         doc_id: str | None = None,
         api_key: str | None = None,
     ) -> list[GraphNode]:
-        """Insert or merge multiple nodes and refresh their vector embeddings in one batch."""
+        """Insert or merge multiple nodes and refresh their full and label-only embeddings."""
         if not nodes_spec:
             return []
         nodes: list[GraphNode] = []
         embed_by_id: dict[str, str] = {}
+        label_by_id: dict[str, str] = {}
         for spec in nodes_spec:
             effective_doc_id = spec.get("doc_id") if spec.get("doc_id") is not None else doc_id
             node, embed_text = self._upsert_node_in_graph(
@@ -174,9 +185,39 @@ class ClinicalKnowledgeGraph:
             )
             nodes.append(node)
             embed_by_id[node.node_id] = embed_text
+            if node.node_type != "document":
+                label_by_id[node.node_id] = self._build_node_label_text(
+                    node.canonical_name,
+                    node.aliases,
+                )
 
         self._vector_store.upsert_many(list(embed_by_id.items()), api_key=api_key)
+        if label_by_id:
+            self._vector_store.upsert_labels_batch(list(label_by_id.items()), api_key=api_key)
         return nodes
+
+    def check_label_coverage(
+        self,
+        query_vectors: list[Any],
+        *,
+        threshold: float = 0.48,
+        api_key: str | None = None,
+    ) -> tuple[bool, float]:
+        """Return ``(all_covered, min_best_score)`` against label-only embeddings."""
+        if not self._vector_store._label_vectors or not query_vectors:
+            return True, 1.0
+
+        best_scores: list[float] = []
+        for qvec in query_vectors:
+            hits = self._vector_store.search_labels(
+                "",
+                top_k=1,
+                query_vector=qvec,
+                api_key=api_key,
+            )
+            best_scores.append(hits[0][1] if hits else 0.0)
+        min_best = min(best_scores) if best_scores else 0.0
+        return min_best >= threshold, min_best
 
     def upsert_edge(
         self,
@@ -283,6 +324,7 @@ class ClinicalKnowledgeGraph:
         top_k: int = 5,
         allowed_doc_ids: set[str] | None = None,
         api_key: str | None = None,
+        query_vector: Any = None,
     ) -> list[tuple[str, float]]:
         """Find top ``top_k`` seed nodes combining exact alias matching and vector similarity."""
         if top_k <= 0 or self._graph.number_of_nodes() == 0:
@@ -301,12 +343,14 @@ class ClinicalKnowledgeGraph:
         scores: dict[str, float] = {}
 
         # 1. Semantic vector similarity first
-        vector_hits = self._vector_store.search(
-            query,
-            top_k=max(top_k * 2, 10),
-            allowed_node_ids=candidate_node_ids,
-            api_key=api_key,
-        )
+        search_kwargs: dict[str, Any] = {
+            "top_k": max(top_k * 2, 10),
+            "allowed_node_ids": candidate_node_ids,
+            "api_key": api_key,
+        }
+        if query_vector is not None:
+            search_kwargs["query_vector"] = query_vector
+        vector_hits = self._vector_store.search(query, **search_kwargs)
         for nid, sim in vector_hits:
             if nid not in scores or sim > scores[nid]:
                 scores[nid] = sim
@@ -413,6 +457,7 @@ class ClinicalKnowledgeGraph:
                             "relation": edge.relation,
                             "doc_ids": sorted(edge_docs),
                             "evidence": filtered_evidence,
+                            "hop": depth + 1,
                         }
                     )
                     matched_doc_ids.update(edge_docs)

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "hard_crossdoc_01",
+    "query": "How can long-term metformin therapy complicate the clinical assessment of diabetic polyneuropathy (such as through vitamin B12 deficiency), and what laboratory monitoring and neuropathy screening intervals are recommended?",
+    "expected_mode": "hybrid",
+    "rationale": "Cross-document bridge linking Metformin Label adverse effects (vitamin B12 deficiency) with NVL Typ-2-Diabetes diabetic polyneuropathy screening and assessment."
+  },
+  {
+    "id": "hard_crossdoc_02",
+    "query": "For an elderly Type 2 diabetes patient with moderate renal impairment (eGFR 35 mL/min/1.73 m²) and heart failure undergoing iodinated contrast imaging, how do the metformin label's renal and contrast precautions interact with the guideline's SGLT2 inhibitor, DPP-4 inhibitor, and sulfonylurea recommendations?",
+    "expected_mode": "hybrid",
+    "rationale": "Cross-document multi-entity synthesis across metformin renal/contrast rules, heart failure, elderly population, and three second-line drug classes."
+  },
+  {
+    "id": "hard_ddi_03",
+    "query": "In a Type 2 diabetes patient with heart failure taking furosemide, or taking topiramate or cimetidine, how does co-administration affect metformin exposure and lactic acidosis risk, and how does heart failure influence prioritizing an SGLT2 inhibitor?",
+    "expected_mode": "hybrid",
+    "rationale": "Drug-drug interaction and comorbidity triangulation connecting Metformin Label PK/acidosis warnings (furosemide, topiramate, cimetidine) with NVL heart failure SGLT2i guidance."
+  },
+  {
+    "id": "hard_exclusion_04",
+    "query": "Which clinical risks require avoiding or discontinuing metformin, sulfonylureas, and certain DPP-4 inhibitors in a patient with decompensated heart failure and severe renal impairment (eGFR < 30 mL/min/1.73 m²)?",
+    "expected_mode": "hybrid",
+    "rationale": "Multi-class negative/exclusion query spanning separate safety and contraindication sections across both documents."
+  },
+  {
+    "id": "hard_cascade_05",
+    "query": "In a patient with Type 2 diabetes who has eGFR 28 mL/min/1.73 m², diabetic retinopathy, and diabetic foot syndrome, which antidiabetic drugs are contraindicated, what hypoglycemia considerations affect glycemic targets, and how frequently should retina and foot exams be performed?",
+    "expected_mode": "hybrid",
+    "rationale": "Multi-complication cascade linking nephropathy (eGFR < 30), retinopathy, foot syndrome, drug contraindications, and screening intervals."
+  }
+]

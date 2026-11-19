@@ -1,0 +1,20 @@
+[
+  {
+    "id": "nohint_01",
+    "query": "Which non-glycemic adverse effect of long-term metformin therapy can mimic or worsen diabetic neuropathy, and how often should it be monitored alongside neuropathy screening?",
+    "expected_mode": "hybrid",
+    "rationale": "No-hint cross-document bridge: omits 'vitamin B12 deficiency' so retrieval must connect metformin adverse effects with diabetic polyneuropathy."
+  },
+  {
+    "id": "nohint_02",
+    "query": "Which anticonvulsant and which H2-receptor antagonist increase metformin systemic exposure, and what life-threatening metabolic complication do carbonic anhydrase inhibitors and heart failure both predispose metformin patients to?",
+    "expected_mode": "hybrid",
+    "rationale": "No-hint drug-interaction and safety bridge: omits 'topiramate', 'cimetidine', and 'lactic acidosis'."
+  },
+  {
+    "id": "nohint_03",
+    "query": "In a patient with Type 2 diabetes and heart failure, which oral antidiabetic drug class should be avoided due to FDA heart failure hospitalization warnings, and which oral class is preferred instead to reduce heart failure hospitalizations?",
+    "expected_mode": "hybrid",
+    "rationale": "No-hint class-level comparison: omits 'DPP-4 inhibitors' (saxagliptin/alogliptin) and 'SGLT2 inhibitors' while contrasting contraindication vs preference."
+  }
+]

@@ -19,6 +19,8 @@
 
   const state = {
     hasServerApiKey: false,
+    guardReachable: null,
+    guardPollTimer: null,
     documents: [],
     pendingJobs: new Map(), // job_id -> { job_id, title, current_step, timerId }
     selectedDocId: null,
@@ -45,6 +47,7 @@
     apiGuideLang: "python",
     activeView: "overview",
     workspaceInitializedFit: false,
+    retrievalMode: "auto",
   };
 
   // --- DOM References ---
@@ -55,6 +58,7 @@
     workspaceView: document.getElementById("workspace-view"),
     overviewApiGuideBtn: document.getElementById("overview-api-guide-btn"),
     openWorkspaceCta: document.getElementById("open-workspace-cta"),
+    unitEvalsGrid: document.getElementById("unit-evals-grid"),
     benchmarkSummaryGrid: document.getElementById("benchmark-summary-grid"),
     benchmarkQueriesList: document.getElementById("benchmark-queries-list"),
 
@@ -65,11 +69,15 @@
     apiKeyBtn: document.getElementById("api-key-btn"),
     apiKeyStatusDot: document.getElementById("api-key-status-dot"),
     apiKeyStatusLabel: document.getElementById("api-key-status-label"),
+    guardStatusPill: document.getElementById("guard-status-pill"),
+    guardStatusDot: document.getElementById("guard-status-dot"),
+    guardStatusLabel: document.getElementById("guard-status-label"),
     apiGuideBtn: document.getElementById("api-guide-btn"),
 
     sidebarLeft: document.getElementById("sidebar-left"),
     toggleDocsBtn: document.getElementById("toggle-docs-btn"),
     docCountBadge: document.getElementById("doc-count-badge"),
+    docShowcaseNote: document.getElementById("doc-showcase-note"),
     docList: document.getElementById("doc-list"),
     openUploadBtn: document.getElementById("open-upload-btn"),
 
@@ -85,6 +93,10 @@
     pipelineBar: document.getElementById("pipeline-bar"),
     closePipelineBtn: document.getElementById("close-pipeline-btn"),
     pipelineStatusText: document.getElementById("pipeline-status-text"),
+    stageLatency: document.getElementById("stage-latency"),
+    pipelineLatency: document.getElementById("pipeline-latency"),
+    pipelineLatencyValue: document.getElementById("pipeline-latency-value"),
+    pipelineLatencyTooltip: document.getElementById("pipeline-latency-tooltip"),
     stageRewrite: document.getElementById("stage-rewrite"),
     rewriteWrapper: document.getElementById("rewrite-wrapper"),
     rewriteCompactPill: document.getElementById("rewrite-compact-pill"),
@@ -94,13 +106,22 @@
     modeIconGraph: document.getElementById("mode-icon-graph"),
     stageRetrieval: document.getElementById("stage-retrieval"),
     evidenceStack: document.getElementById("evidence-stack"),
+    stageWebSearch: document.getElementById("stage-web-search"),
+    webEvidenceStack: document.getElementById("web-evidence-stack"),
     stageSynthesis: document.getElementById("stage-synthesis"),
     synthStatusPill: document.getElementById("synth-status-pill"),
 
     chatMessages: document.getElementById("chat-messages"),
     chatForm: document.getElementById("chat-form"),
+    chatGuardNote: document.getElementById("chat-guard-note"),
     chatInput: document.getElementById("chat-input"),
-    retrievalModeSelect: document.getElementById("retrieval-mode-select"),
+    retrievalModeGroup: document.getElementById("retrieval-mode-group"),
+    webSearchSwitch: document.getElementById("web-search-switch"),
+    webSearchToggle: document.getElementById("web-search-toggle"),
+    webSearchModal: document.getElementById("web-search-modal"),
+    closeWebSearchModalBtn: document.getElementById("close-web-search-modal-btn"),
+    cancelWebSearchBtn: document.getElementById("cancel-web-search-btn"),
+    confirmWebSearchBtn: document.getElementById("confirm-web-search-btn"),
     sendQueryBtn: document.getElementById("send-query-btn"),
 
     apiKeyModal: document.getElementById("api-key-modal"),
@@ -138,6 +159,11 @@
     noticeModalMessage: document.getElementById("notice-modal-message"),
     closeNoticeModalBtn: document.getElementById("close-notice-modal-btn"),
     okNoticeModalBtn: document.getElementById("ok-notice-modal-btn"),
+
+    guardUploadConfirmModal: document.getElementById("guard-upload-confirm-modal"),
+    closeGuardUploadModalBtn: document.getElementById("close-guard-upload-modal-btn"),
+    cancelGuardUploadBtn: document.getElementById("cancel-guard-upload-btn"),
+    confirmGuardUploadBtn: document.getElementById("confirm-guard-upload-btn"),
 
     apiGuideModal: document.getElementById("api-guide-modal"),
     closeApiGuideModalBtn: document.getElementById("close-api-guide-modal"),
@@ -278,18 +304,110 @@
     el.apiKeyModal.classList.add("hidden");
   }
 
+  function updateGuardStatusUI(reachable) {
+    state.guardReachable = typeof reachable === "boolean" ? reachable : null;
+    const isOffline = reachable === false;
+
+    if (el.guardStatusPill && el.guardStatusLabel) {
+      el.guardStatusPill.classList.remove("ok", "unverified");
+      if (reachable === true) {
+        el.guardStatusPill.classList.add("ok");
+        el.guardStatusLabel.textContent = "Prompt Guard: Active";
+      } else if (isOffline) {
+        el.guardStatusPill.classList.add("unverified");
+        el.guardStatusLabel.textContent = "Inputs are not verified";
+      }
+    }
+
+    if (el.chatGuardNote) {
+      el.chatGuardNote.classList.toggle("hidden", !isOffline);
+    }
+    if (el.chatForm) {
+      el.chatForm.classList.toggle("unverified", isOffline);
+    }
+    if (el.webSearchToggle) {
+      el.webSearchToggle.disabled = false;
+      el.webSearchToggle.removeAttribute("aria-disabled");
+    }
+    if (el.webSearchSwitch) {
+      el.webSearchSwitch.classList.remove("is-disabled");
+      el.webSearchSwitch.title = "Enable web fallback on allowlisted medical websites";
+    }
+  }
+
+  function syncWebSearchStageState() {
+    if (!el.stageWebSearch || !el.webEvidenceStack) return;
+    if (
+      el.stageWebSearch.classList.contains("active") ||
+      el.stageWebSearch.classList.contains("done")
+    ) {
+      return;
+    }
+    const webEnabled = Boolean(el.webSearchToggle && el.webSearchToggle.checked);
+    el.stageWebSearch.classList.toggle("disabled", !webEnabled);
+    el.webEvidenceStack.innerHTML = webEnabled
+      ? '<span class="evidence-empty">Waiting</span>'
+      : '<span class="evidence-empty">Disabled</span>';
+  }
+
+  function openWebSearchModal() {
+    if (!el.webSearchModal) return;
+    el.webSearchModal.classList.remove("hidden");
+    if (el.confirmWebSearchBtn) el.confirmWebSearchBtn.focus();
+  }
+
+  function closeWebSearchModal(confirmed = false) {
+    if (el.webSearchModal) {
+      el.webSearchModal.classList.add("hidden");
+    }
+    if (el.webSearchToggle) {
+      el.webSearchToggle.checked = Boolean(confirmed);
+    }
+    syncWebSearchStageState();
+  }
+
+  const FROZEN_SHOWCASE_NOTE =
+    "The German diabetes guideline and Metformin Label are frozen and cannot be removed for showcase purposes.";
+
+  function scheduleGuardHealthPoll(pollSeconds) {
+    if (state.guardPollTimer !== null) {
+      clearInterval(state.guardPollTimer);
+      state.guardPollTimer = null;
+    }
+    if (pollSeconds > 0) {
+      state.guardPollTimer = setInterval(() => {
+        checkSystemStatus();
+      }, pollSeconds * 1000);
+    }
+  }
+
   async function checkSystemStatus() {
+    let guardReachable = false;
+    let pollSeconds = 30;
     try {
       const res = await apiFetch("/v1/system/status");
       if (res.ok) {
         const data = await res.json();
         state.hasServerApiKey = Boolean(data.has_openai_api_key);
+        guardReachable = Boolean(data.prompt_guard_reachable);
+        pollSeconds = Number.isFinite(data.prompt_guard_poll_seconds)
+          ? Number(data.prompt_guard_poll_seconds)
+          : 30;
+        if (typeof data.auto_prune_non_frozen_hours === "number" && el.docShowcaseNote) {
+          el.docShowcaseNote.textContent =
+            data.auto_prune_non_frozen_hours > 0
+              ? `${FROZEN_SHOWCASE_NOTE} Newly uploaded documents are automatically removed after ${data.auto_prune_non_frozen_hours} hours.`
+              : FROZEN_SHOWCASE_NOTE;
+        }
       }
     } catch {
       // If status endpoint is unreachable, fall back to checking sessionStorage
       state.hasServerApiKey = false;
+      guardReachable = false;
     }
+    updateGuardStatusUI(guardReachable);
     updateApiKeyStatusUI();
+    scheduleGuardHealthPoll(pollSeconds);
     if (!state.hasServerApiKey && !getSessionApiKey()) {
       openApiKeyModal(true);
     }
@@ -459,6 +577,27 @@
     });
   }
 
+  function setDocsCollapsed(collapsed) {
+    const isCollapsed = Boolean(collapsed);
+    if (el.sidebarLeft) {
+      el.sidebarLeft.classList.toggle("collapsed", isCollapsed);
+    }
+    if (el.toggleDocsBtn) {
+      el.toggleDocsBtn.setAttribute("aria-expanded", String(!isCollapsed));
+      const label = isCollapsed ? "Expand document list" : "Collapse document list";
+      el.toggleDocsBtn.setAttribute("title", label);
+      el.toggleDocsBtn.setAttribute("aria-label", label);
+    }
+  }
+
+  function scrollDocItemIntoView(docId) {
+    if (!el.docList || !docId) return;
+    const item = el.docList.querySelector(`.doc-item[data-doc-id="${CSS.escape(docId)}"]`);
+    if (item) {
+      item.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }
+
   function selectDocument(docId) {
     const doc = state.documents.find((d) => d.doc_id === docId);
     if (!doc) return;
@@ -512,8 +651,17 @@
     el.uploadModal.classList.add("hidden");
   }
 
-  async function handleUploadSubmit(event) {
-    event.preventDefault();
+  function openGuardUploadConfirmModal() {
+    if (!el.guardUploadConfirmModal) return;
+    el.guardUploadConfirmModal.classList.remove("hidden");
+  }
+
+  function closeGuardUploadConfirmModal() {
+    if (!el.guardUploadConfirmModal) return;
+    el.guardUploadConfirmModal.classList.add("hidden");
+  }
+
+  async function performUpload() {
     const file = el.uploadFile.files?.[0];
     if (!file) return;
 
@@ -560,6 +708,19 @@
       el.submitUploadBtn.disabled = false;
       el.submitUploadBtn.textContent = "Upload & Extract";
     }
+  }
+
+  async function handleUploadSubmit(event) {
+    event.preventDefault();
+    const file = el.uploadFile.files?.[0];
+    if (!file) return;
+
+    if (state.guardReachable === false) {
+      openGuardUploadConfirmModal();
+      return;
+    }
+
+    await performUpload();
   }
 
   function startJobPolling(jobId, title, initialStep) {
@@ -1254,27 +1415,54 @@
       ? element.data("canonical_name")
       : `${element.data("source")} —[${element.data("relation")}]→ ${element.data("target")}`;
 
-    const docIds = (element.data("doc_ids") || []).join(", ") || "—";
+    const rawDocIds = element.data("doc_ids") || [];
+    const docIdsHtml = rawDocIds.length
+      ? rawDocIds
+          .map(
+            (id) =>
+              `<button type="button" class="inspector-doc-chip" data-doc-id="${escapeHtml(id)}">${escapeHtml(id)}</button>`
+          )
+          .join("")
+      : "—";
     const fields = [];
 
     if (isNode) {
       const aliases = (element.data("aliases") || []).join(", ") || "—";
       fields.push(["node_id", element.data("node_id")]);
-      fields.push(["doc_ids", docIds]);
+      fields.push(["doc_ids", docIdsHtml, true]);
       fields.push(["aliases", aliases]);
       fields.push(["description", element.data("description") || "—"]);
     } else {
       fields.push(["edge id", element.id()]);
-      fields.push(["doc_ids", docIds]);
+      fields.push(["doc_ids", docIdsHtml, true]);
       fields.push(["quote", element.data("quote") || element.data("relationship_description") || "—"]);
     }
 
     el.inspectorBody.innerHTML = fields
-      .map(
-        ([label, val]) =>
-          `<div class="inspector-field"><strong>${escapeHtml(label)}:</strong><span>${escapeHtml(val)}</span></div>`
-      )
+      .map(([label, val, isHtml]) => {
+        const content = isHtml ? val : escapeHtml(val);
+        return `<div class="inspector-field"><strong>${escapeHtml(label)}:</strong><span>${content}</span></div>`;
+      })
       .join("");
+
+    el.inspectorBody.querySelectorAll(".inspector-doc-chip").forEach((chip) => {
+      const docId = chip.dataset.docId;
+      chip.addEventListener("mouseenter", () => {
+        setDocsCollapsed(false);
+        state.relatedDocIds = new Set([docId]);
+        updateDocumentListHighlights();
+        scrollDocItemIntoView(docId);
+      });
+      chip.addEventListener("mouseleave", () => {
+        state.relatedDocIds = new Set(element.data("doc_ids") || []);
+        updateDocumentListHighlights();
+      });
+      chip.addEventListener("click", () => {
+        setDocsCollapsed(false);
+        selectDocument(docId);
+        scrollDocItemIntoView(docId);
+      });
+    });
 
     el.inspectorBar.classList.remove("hidden");
   }
@@ -1308,8 +1496,28 @@
 
     el.evidenceStack.innerHTML = "";
 
+    if (el.stageWebSearch && el.webEvidenceStack) {
+      el.stageWebSearch.classList.remove("active", "done");
+      const webEnabled = Boolean(el.webSearchToggle && el.webSearchToggle.checked);
+      el.stageWebSearch.classList.toggle("disabled", !webEnabled);
+      el.webEvidenceStack.innerHTML = webEnabled
+        ? '<span class="evidence-empty">Waiting</span>'
+        : '<span class="evidence-empty">Disabled</span>';
+    }
+
     el.synthStatusPill.classList.remove("synthesizing", "done");
     el.synthStatusPill.innerHTML = '<span class="synth-idle-text">Waiting</span>';
+
+    if (el.stageLatency) {
+      el.stageLatency.classList.add("hidden");
+      el.stageLatency.classList.remove("done");
+    }
+    if (el.pipelineLatencyValue) {
+      el.pipelineLatencyValue.textContent = "";
+    }
+    if (el.pipelineLatencyTooltip) {
+      el.pipelineLatencyTooltip.innerHTML = "";
+    }
   }
 
   function buildEvidenceItems(data, seedNodes) {
@@ -1389,7 +1597,76 @@
     });
   }
 
+  function renderWebSearchStage(data) {
+    if (!el.stageWebSearch || !el.webEvidenceStack) return;
+
+    const enabled = Boolean(data.enabled);
+    el.stageWebSearch.classList.toggle("disabled", !enabled);
+
+    if (!enabled) {
+      el.stageWebSearch.classList.remove("active", "done");
+      el.webEvidenceStack.innerHTML = '<span class="evidence-empty">Disabled</span>';
+      return;
+    }
+
+    if (data.status === "evaluating_sufficiency") {
+      el.stageWebSearch.classList.add("active");
+      el.stageWebSearch.classList.remove("done");
+      el.pipelineStatusText.textContent = "Checking web fallback sufficiency...";
+      el.webEvidenceStack.innerHTML = '<span class="evidence-empty">Checking...</span>';
+      return;
+    }
+
+    el.stageWebSearch.classList.remove("active");
+    el.stageWebSearch.classList.add("done");
+
+    const sources = Array.isArray(data.web_sources) ? data.web_sources : [];
+    el.webEvidenceStack.innerHTML = "";
+    if (!sources.length) {
+      const msg = data.sufficient_locally ? "Local sufficient" : "None";
+      el.webEvidenceStack.innerHTML = `<span class="evidence-empty">${msg}</span>`;
+      return;
+    }
+
+    const fileSvg = `
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path d="M4.5 2.5h4.8L12.5 5.7V13a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1z" />
+        <path d="M9 2.5V6h3.5" />
+      </svg>
+    `;
+
+    sources.forEach((src) => {
+      const isPdf = (src.content_type || "").toLowerCase() === "pdf";
+      const title = src.title || src.domain || "Web Source";
+      const url = src.url || "";
+      const tooltip = url ? `${title} — ${url}` : title;
+
+      const iconBtn = document.createElement("button");
+      iconBtn.type = "button";
+      iconBtn.className = "evidence-file-icon";
+      iconBtn.dataset.source = isPdf ? "web-pdf" : "web";
+      iconBtn.dataset.tooltip = tooltip;
+      iconBtn.title = tooltip;
+      iconBtn.setAttribute("aria-label", tooltip);
+      iconBtn.innerHTML = fileSvg;
+
+      if (url) {
+        iconBtn.addEventListener("click", () => {
+          window.open(url, "_blank", "noopener,noreferrer");
+        });
+      }
+      el.webEvidenceStack.appendChild(iconBtn);
+    });
+  }
+
   function handlePipelineEvent(eventType, data) {
+    if (eventType === "guard") {
+      if (typeof data.reachable === "boolean") {
+        updateGuardStatusUI(data.reachable);
+      }
+      return;
+    }
+
     if (eventType === "rewrite") {
       el.pipelineStatusText.textContent = "Rewriting & routing query...";
       el.stageRewrite.classList.remove("active");
@@ -1450,6 +1727,11 @@
       return;
     }
 
+    if (eventType === "web_search") {
+      renderWebSearchStage(data);
+      return;
+    }
+
     if (eventType === "synthesizing") {
       el.stageSynthesis.classList.add("active");
       el.pipelineStatusText.textContent = "Synthesizing grounded answer...";
@@ -1461,6 +1743,16 @@
     }
 
     if (eventType === "done") {
+      if (typeof data.guard_reachable === "boolean") {
+        updateGuardStatusUI(data.guard_reachable);
+      }
+      if (Array.isArray(data.web_sources) && (data.web_sources.length > 0 || data.used_web_fallback)) {
+        renderWebSearchStage({
+          enabled: true,
+          triggered: Boolean(data.used_web_fallback),
+          web_sources: data.web_sources,
+        });
+      }
       el.stageSynthesis.classList.remove("active");
       el.stageSynthesis.classList.add("done");
       el.pipelineStatusText.textContent = "Complete";
@@ -1468,7 +1760,59 @@
       el.synthStatusPill.classList.remove("synthesizing");
       el.synthStatusPill.classList.add("done");
       el.synthStatusPill.innerHTML = '<span class="synth-done-check">&#10003;</span><span>Complete</span>';
+
+      renderPipelineLatency(data.metrics && data.metrics.latencies_ms);
     }
+  }
+
+  function formatPipelineDuration(ms) {
+    if (typeof ms !== "number" || !Number.isFinite(ms)) return "—";
+    if (ms >= 1000) return `${(ms / 1000).toFixed(2)} s`;
+    return `${Math.round(ms)} ms`;
+  }
+
+  function renderPipelineLatency(latencies) {
+    if (!el.stageLatency || !el.pipelineLatency || !el.pipelineLatencyValue || !el.pipelineLatencyTooltip) {
+      return;
+    }
+    if (!latencies || typeof latencies !== "object") {
+      el.stageLatency.classList.add("hidden");
+      return;
+    }
+
+    const totalMs = typeof latencies.total === "number" ? latencies.total : null;
+    if (totalMs === null) {
+      el.stageLatency.classList.add("hidden");
+      return;
+    }
+
+    const hasRetrieval =
+      typeof latencies.rag_retrieval === "number" ||
+      typeof latencies.seed_search === "number" ||
+      typeof latencies.k_hop_traversal === "number";
+    const retrievalMs = hasRetrieval
+      ? (latencies.rag_retrieval || 0) +
+        (latencies.seed_search || 0) +
+        (latencies.k_hop_traversal || 0)
+      : null;
+
+    const steps = [
+      ["Prompt Guard", latencies.guard],
+      ["Search Strings", latencies.query_rewrite],
+      ["Retrieval", retrievalMs],
+      ["Web Search", latencies.web_search],
+      ["Synthesis", latencies.answer_synthesis],
+    ];
+
+    el.pipelineLatencyValue.textContent = formatPipelineDuration(totalMs);
+    el.pipelineLatencyTooltip.innerHTML = steps
+      .map(
+        ([label, val]) =>
+          `<div class="pipeline-latency-row"><span class="pipeline-latency-row-label">${escapeHtml(label)}</span><span class="pipeline-latency-row-val">${escapeHtml(formatPipelineDuration(val))}</span></div>`
+      )
+      .join("");
+    el.stageLatency.classList.add("done");
+    el.stageLatency.classList.remove("hidden");
   }
 
   // --- Chat & Citations ---
@@ -1528,6 +1872,45 @@
 
       citSection.appendChild(pillsRow);
       msgEl.appendChild(citSection);
+    }
+
+    const webSources = Array.isArray(payload.web_sources) ? payload.web_sources : [];
+    if (webSources.length > 0) {
+      const webSection = document.createElement("div");
+      webSection.className = "citations-section web-sources-section";
+      webSection.innerHTML = '<div class="citations-heading">Web Sources (External)</div>';
+
+      const webRow = document.createElement("div");
+      webRow.className = "citation-pills-row";
+
+      webSources.forEach((src) => {
+        const title = src.title || src.domain || "Web Source";
+        const domain = src.domain || "";
+        const excerpts = Array.isArray(src.excerpts) ? src.excerpts : [];
+        const quoteCount = excerpts.length;
+        const metaParts = [];
+        if (domain) metaParts.push(domain);
+        if (quoteCount > 0) metaParts.push(`${quoteCount} ${quoteCount === 1 ? "quote" : "quotes"}`);
+
+        const pill = document.createElement("a");
+        pill.className = "citation-pill web-source-pill";
+        pill.href = src.url || "#";
+        pill.target = "_blank";
+        pill.rel = "noopener noreferrer";
+        pill.innerHTML = `
+          <span class="citation-pill-title">${escapeHtml(title)}</span>
+          ${metaParts.length ? `<span class="citation-pill-sep" aria-hidden="true">&middot;</span><span class="citation-pill-count">${escapeHtml(metaParts.join(" · "))}</span>` : ""}
+        `;
+        const tooltipLines = [title];
+        if (src.url) tooltipLines.push(src.url);
+        if (excerpts.length > 0) tooltipLines.push(`"${excerpts[0]}"`);
+        pill.title = tooltipLines.join("\n");
+
+        webRow.appendChild(pill);
+      });
+
+      webSection.appendChild(webRow);
+      msgEl.appendChild(webSection);
     }
 
     el.chatMessages.appendChild(msgEl);
@@ -1953,7 +2336,8 @@
       query: queryText,
       session_id: state.sessionId,
       messages: state.chatHistory.slice(-10),
-      retrieval_mode: el.retrievalModeSelect.value || "auto",
+      retrieval_mode: state.retrievalMode || "auto",
+      allow_web_fallback: Boolean(el.webSearchToggle && el.webSearchToggle.checked),
       include_trace: true,
     };
 
@@ -2313,7 +2697,38 @@ print(len(graph["nodes"]), len(graph["edges"]))`,
     }
   }
 
+  function renderUnitEvals(unitEvals) {
+    if (!el.unitEvalsGrid) return;
+    if (!Array.isArray(unitEvals) || unitEvals.length === 0) {
+      el.unitEvalsGrid.classList.add("hidden");
+      el.unitEvalsGrid.innerHTML = "";
+      return;
+    }
+    el.unitEvalsGrid.innerHTML = unitEvals
+      .map((u) => {
+        const hasScore = typeof u.passed === "number" && typeof u.total === "number";
+        const value = hasScore ? `${u.passed} / ${u.total}` : `${u.cases ?? 0} cases`;
+        const subParts = [];
+        if (typeof u.avg_latency_ms === "number") {
+          subParts.push(`Avg: <strong>${escapeHtml(formatLatencyMs(u.avg_latency_ms))}</strong>`);
+        }
+        if (typeof u.avg_sources === "number") {
+          subParts.push(`Sources: <strong>${escapeHtml(String(u.avg_sources))}</strong>`);
+        }
+        return `
+          <div class="benchmark-kpi-card">
+            <div class="benchmark-kpi-label"><span>${escapeHtml(u.label || "Unit Eval")}</span></div>
+            <div class="benchmark-kpi-value">${escapeHtml(value)}</div>
+            <div class="benchmark-kpi-sub">${subParts.join(" ") || "<span>Unit stage check</span>"}</div>
+          </div>
+        `;
+      })
+      .join("");
+    el.unitEvalsGrid.classList.remove("hidden");
+  }
+
   function renderBenchmarks(data) {
+    renderUnitEvals(data && data.unit_evals);
     if (!data || data.available === false) {
       renderBenchmarksEmpty("No benchmark telemetry available yet. Run the evaluation suite to populate GET /v1/benchmarks.");
       return;
@@ -2329,7 +2744,9 @@ print(len(graph["nodes"]), len(graph["edges"]))`,
         : "—";
 
     if (el.benchmarkSummaryGrid) {
-      const modeKeys = ["rag", "hybrid", "auto"];
+      const modeKeys = ["rag", "hybrid", "auto"].filter(
+        (mode) => byMode[mode] && typeof byMode[mode] === "object"
+      );
       const accuracyCardHtml = `
         <div class="benchmark-kpi-card">
           <div class="benchmark-kpi-label"><span>Auto Router Accuracy</span></div>
@@ -2539,13 +2956,35 @@ print(len(graph["nodes"]), len(graph["edges"]))`,
       updateApiKeyStatusUI();
     });
 
+    if (el.webSearchToggle) {
+      el.webSearchToggle.addEventListener("change", () => {
+        if (el.webSearchToggle.checked) {
+          // Require explicit confirmation before enabling external web search
+          el.webSearchToggle.checked = false;
+          openWebSearchModal();
+        } else {
+          syncWebSearchStageState();
+        }
+      });
+    }
+    if (el.confirmWebSearchBtn) {
+      el.confirmWebSearchBtn.addEventListener("click", () => closeWebSearchModal(true));
+    }
+    if (el.cancelWebSearchBtn) {
+      el.cancelWebSearchBtn.addEventListener("click", () => closeWebSearchModal(false));
+    }
+    if (el.closeWebSearchModalBtn) {
+      el.closeWebSearchModalBtn.addEventListener("click", () => closeWebSearchModal(false));
+    }
+    if (el.webSearchModal) {
+      el.webSearchModal.addEventListener("click", (e) => {
+        if (e.target === el.webSearchModal) closeWebSearchModal(false);
+      });
+    }
+
     if (el.toggleDocsBtn && el.sidebarLeft) {
       el.toggleDocsBtn.addEventListener("click", () => {
-        const isCollapsed = el.sidebarLeft.classList.toggle("collapsed");
-        el.toggleDocsBtn.setAttribute("aria-expanded", String(!isCollapsed));
-        const label = isCollapsed ? "Expand document list" : "Collapse document list";
-        el.toggleDocsBtn.setAttribute("title", label);
-        el.toggleDocsBtn.setAttribute("aria-label", label);
+        setDocsCollapsed(!el.sidebarLeft.classList.contains("collapsed"));
       });
     }
 
@@ -2553,6 +2992,24 @@ print(len(graph["nodes"]), len(graph["edges"]))`,
     el.closeUploadModalBtn.addEventListener("click", closeUploadModal);
     el.cancelUploadBtn.addEventListener("click", closeUploadModal);
     el.uploadForm.addEventListener("submit", handleUploadSubmit);
+
+    if (el.closeGuardUploadModalBtn) {
+      el.closeGuardUploadModalBtn.addEventListener("click", closeGuardUploadConfirmModal);
+    }
+    if (el.cancelGuardUploadBtn) {
+      el.cancelGuardUploadBtn.addEventListener("click", closeGuardUploadConfirmModal);
+    }
+    if (el.guardUploadConfirmModal) {
+      el.guardUploadConfirmModal.addEventListener("click", (e) => {
+        if (e.target === el.guardUploadConfirmModal) closeGuardUploadConfirmModal();
+      });
+    }
+    if (el.confirmGuardUploadBtn) {
+      el.confirmGuardUploadBtn.addEventListener("click", async () => {
+        closeGuardUploadConfirmModal();
+        await performUpload();
+      });
+    }
 
     el.closeInspectorBtn.addEventListener("click", resetGraphFocus);
     if (el.closePipelineBtn && el.pipelineBar) {
@@ -2567,7 +3024,9 @@ print(len(graph["nodes"]), len(graph["edges"]))`,
     el.closeDocViewerBtn.addEventListener("click", closeDocumentViewer);
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
-      if (el.apiGuideModal && !el.apiGuideModal.classList.contains("hidden")) {
+      if (el.guardUploadConfirmModal && !el.guardUploadConfirmModal.classList.contains("hidden")) {
+        closeGuardUploadConfirmModal();
+      } else if (el.apiGuideModal && !el.apiGuideModal.classList.contains("hidden")) {
         closeApiGuideModal();
       } else if (!el.docViewerModal.classList.contains("hidden")) {
         closeDocumentViewer();
@@ -2578,6 +3037,20 @@ print(len(graph["nodes"]), len(graph["edges"]))`,
 
     el.closeNoticeModalBtn.addEventListener("click", hideNoticeModal);
     el.okNoticeModalBtn.addEventListener("click", hideNoticeModal);
+
+    if (el.retrievalModeGroup) {
+      el.retrievalModeGroup.querySelectorAll(".mode-pill").forEach((pill) => {
+        pill.addEventListener("click", () => {
+          const mode = pill.dataset.mode || "auto";
+          state.retrievalMode = mode;
+          el.retrievalModeGroup.querySelectorAll(".mode-pill").forEach((btn) => {
+            const isActive = btn === pill;
+            btn.classList.toggle("active", isActive);
+            btn.setAttribute("aria-pressed", String(isActive));
+          });
+        });
+      });
+    }
 
     el.chatForm.addEventListener("submit", handleQuerySubmit);
     el.chatInput.addEventListener("keydown", (e) => {

@@ -1,0 +1,96 @@
+{
+  "passed": 5,
+  "total": 5,
+  "results": [
+    {
+      "id": "synth_sufficient_local_01",
+      "query": "What is the initial starting dose and maximum daily dose of GLUCOPHAGE in adults?",
+      "expected_abstain": false,
+      "passed": true,
+      "answer": "The initial starting dose of GLUCOPHAGE in adults is 500 mg twice a day or 850 mg once a day, administered with meals. The maximum recommended daily dose is 2550 mg.",
+      "citations": [
+        {
+          "doc_id": "doc_metformin",
+          "slug": "metformin-label",
+          "title": "metformin-label",
+          "doc_type": "guideline",
+          "local_restriction": "none",
+          "excerpt": "The usual starting dose of GLUCOPHAGE is 500 mg twice a day or 850 mg once a day, given with meals. The maximum recommended daily dose of GLUCOPHAGE is 2550 mg in adults.",
+          "excerpts": [
+            "The usual starting dose of GLUCOPHAGE is 500 mg twice a day or 850 mg once a day, given with meals. The maximum recommended daily dose of GLUCOPHAGE is 2550 mg in adults."
+          ],
+          "chunk_ids": [
+            "doc_metformin:chunk:12"
+          ],
+          "passages": [
+            {
+              "chunk_id": "doc_metformin:chunk:12",
+              "quote": "The usual starting dose of GLUCOPHAGE is 500 mg twice a day or 850 mg once a day, given with meals. The maximum recommended daily dose of GLUCOPHAGE is 2550 mg in adults.",
+              "chunk_text": "The usual starting dose of GLUCOPHAGE is 500 mg twice a day or 850 mg once a day, given with meals. The maximum recommended daily dose of GLUCOPHAGE is 2550 mg in adults.",
+              "highlighted_chunk": "<mark>The usual starting dose of GLUCOPHAGE is 500 mg twice a day or 850 mg once a day, given with meals. The maximum recommended daily dose of GLUCOPHAGE is 2550 mg in adults.</mark>",
+              "match_start": 0,
+              "match_end": 170
+            }
+          ]
+        }
+      ],
+      "stage_latencies_ms": {
+        "synthesize_ms": 1535.04
+      },
+      "latency_ms": 1535.04,
+      "tokens": 876
+    },
+    {
+      "id": "synth_sufficient_web_02",
+      "query": "What is the recommended starting dose of apixaban for DVT/PE acute treatment and for how many days?",
+      "expected_abstain": false,
+      "passed": true,
+      "answer": "The recommended starting dose of apixaban for the acute treatment of deep vein thrombosis (DVT) and pulmonary embolism (PE) is 10 mg taken orally twice daily for the first 7 days.",
+      "citations": [],
+      "stage_latencies_ms": {
+        "synthesize_ms": 943.61
+      },
+      "latency_ms": 943.61,
+      "tokens": 824
+    },
+    {
+      "id": "synth_insufficient_partial_dapagliflozin_03",
+      "query": "What is the FDA-approved dosing of dapagliflozin for chronic kidney disease and at what eGFR should it not be initiated?",
+      "expected_abstain": true,
+      "passed": true,
+      "answer": "The provided sources do not specify the FDA-approved dosing of dapagliflozin for chronic kidney disease or the eGFR threshold below which it should not be initiated.",
+      "citations": [],
+      "stage_latencies_ms": {
+        "synthesize_ms": 944.77
+      },
+      "latency_ms": 944.77,
+      "tokens": 818
+    },
+    {
+      "id": "synth_insufficient_mismatch_amoxicillin_04",
+      "query": "What is the recommended amoxicillin-clavulanate dose for a patient with CrCl 10-30 mL/min?",
+      "expected_abstain": true,
+      "passed": true,
+      "answer": "The provided sources do not specify the recommended dose of amoxicillin-clavulanate for a patient with a creatinine clearance (CrCl) of 10-30 mL/min.",
+      "citations": [],
+      "stage_latencies_ms": {
+        "synthesize_ms": 872.06
+      },
+      "latency_ms": 872.06,
+      "tokens": 801
+    },
+    {
+      "id": "synth_insufficient_preeclampsia_05",
+      "query": "What is the loading dose and maintenance infusion rate of magnesium sulfate for seizure prophylaxis in preeclampsia?",
+      "expected_abstain": true,
+      "passed": true,
+      "answer": "The provided sources do not specify the loading dose and maintenance infusion rate of magnesium sulfate for seizure prophylaxis in preeclampsia.",
+      "citations": [],
+      "stage_latencies_ms": {
+        "synthesize_ms": 743.55
+      },
+      "latency_ms": 743.55,
+      "tokens": 782
+    }
+  ]
+}
