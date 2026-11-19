@@ -216,7 +216,8 @@ def test_litellm_embedder_embed_many_and_vector_store_upsert_many(
         doc_id="doc_1",
     )
     assert len(nodes) == 2
-    assert len(calls) == 4
+    # Batch 4: is_node embeddings; Batch 5: label_vectors embeddings
+    assert len(calls) == 5
     assert store.count() == 12
 
 

@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Lint, Test & Frontend Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install package and dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Ruff unused import/variable check
+        run: ruff check --select F401,F841,F811 src/ eval/ scripts/ tests/
+
+      - name: Run pytest
+        run: pytest -q
+
+      - name: Set up Node.js for frontend syntax check
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check frontend JavaScript syntax
+        run: node --check frontend/app.js
+
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t clinical-graph:ci .
