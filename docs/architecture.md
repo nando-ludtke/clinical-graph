@@ -26,7 +26,7 @@ flowchart TD
         Gate2 --> Rewriter["Core: QueryRewriter v4 (search_queries + web_search_queries + rag/hybrid + is_medical)"]
         Gate2 --> AnswerAgent
         Rewriter --> LabelCheck{"node_label >= 0.48?"}
-        LabelCheck -- "No (Parallel)" --> WebSearch["Core: 1-Shot Tavily + Vector Chunk RAG + ClinicalGuardClient"]
+        LabelCheck -- "No (Parallel)" --> WebSearch["Core: 1-Shot Tavily + Vector Chunk RAG + Local Regex"]
         LabelCheck -- "Yes" --> Retrieval["Core: rag / hybrid / auto Retrieval (Batch Embed + Elastic 2-Channel + Hop-Decayed Ranking)"]
         KG -.-> Retrieval
         VecStore -.-> Retrieval
